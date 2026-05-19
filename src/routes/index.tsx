@@ -37,12 +37,14 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading, isVisitor, exitVisitorMode } = useAuth();
   const qc = useQueryClient();
+  const visitor = useVisitorProgress();
 
   useEffect(() => {
-    if (!loading && !user) window.location.href = "/auth";
-  }, [user, loading]);
+    if (!loading && !user && !isVisitor) window.location.href = "/auth";
+  }, [user, loading, isVisitor]);
+
 
   const { data: courses = [] } = useQuery({
     queryKey: ["courses"],
