@@ -18,7 +18,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, enterVisitorMode } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,6 +27,12 @@ function AuthPage() {
   useEffect(() => {
     if (!authLoading && user) navigate({ to: "/" });
   }, [authLoading, user, navigate]);
+
+  const continueAsVisitor = () => {
+    enterVisitorMode();
+    navigate({ to: "/" });
+  };
+
 
 
 
