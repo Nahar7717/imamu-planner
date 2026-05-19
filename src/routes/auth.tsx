@@ -12,16 +12,13 @@ import { GraduationCap } from "lucide-react";
 const ALLOWED_DOMAIN = "@sm.imamu.edu.sa";
 
 export const Route = createFileRoute("/auth")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/" });
-  },
   component: AuthPage,
   head: () => ({ meta: [{ title: "Sign in — Academic Planner" }] }),
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
