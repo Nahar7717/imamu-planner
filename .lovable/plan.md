@@ -1,27 +1,25 @@
 ## Problem
 
-Signup fails with `500 — Database error saving new user`.
-
-A trigger `on_auth_user_created` on `auth.users` calls `public.handle_new_user()`, which inserts a row into `public.profiles`. The function is declared `SECURITY DEFINER` but does **not** set `search_path`. When Supabase Auth's internal role fires the trigger, `profiles` can't be resolved, the insert errors, and Auth aborts the whole signup transaction.
+Login succeeds on the server (auth logs show 200), but the app navigates the user straight back to `/auth`. The `beforeLoad` guards in `src/routes/index.tsx` and `src/routes/auth.tsx` call `supabase.auth.getSession()` unconditionally. During SSR (and before the browser client has hydrated the session from `localStorage`), that call returns `null`, so the index route throws `redirect({ to: "/auth" })` immediately after sign-in.
 
 ## Fix
 
-Run one migration that:
+Move the auth gate out of `beforeLoad` and into the component, using a hydrated session check. This matches the TanStack + Supabase pattern (gate only after `getUser()`/session hydration completes on the client).
 
-1. Replaces `public.handle_new_user()` with a hardened version:
-   - Qualifies the table as `public.profiles`
-   - Adds `SET search_path = public`
-   - Wraps the insert in an exception block so a profile-row failure can never block signup again (logs a warning, still returns `NEW`)
+### `src/routes/index.tsx`
+- Remove the `beforeLoad` redirect.
+- In the `Dashboard` component, use the existing `useAuth()` hook: while `loading`, render a spinner; once loaded, if `!user`, `navigate({ to: "/auth" })`. Only render dashboard content when `user` exists.
+- Keep all data queries gated on `enabled: !!user` (already done for progress; apply same to courses/prerequisites so RLS-protected queries never fire pre-auth).
 
-2. Leaves the existing trigger `on_auth_user_created` in place (it's already wired correctly).
+### `src/routes/auth.tsx`
+- Remove the `beforeLoad` redirect.
+- In `AuthPage`, use `useAuth()`; if `user` exists after loading, `navigate({ to: "/" })`.
 
-No schema changes to `profiles` are needed — `id` and `email` columns already exist and match what the function inserts.
+### `src/routes/__root.tsx`
+- Add a one-time `onAuthStateChange` listener that calls `router.invalidate()` and `queryClient.invalidateQueries()` so cached data refreshes on sign in/out.
 
-No frontend changes needed.
+## Why this works
 
-## Verification
+`localStorage`-persisted sessions only exist in the browser. The `useAuth` hook already subscribes to `onAuthStateChange` and calls `getSession()` on mount, so it correctly reports `loading → user`. Gating in the component avoids the SSR/prerender false-negative that's currently bouncing you to `/auth`.
 
-After applying:
-- Sign up with `445011121@sm.imamu.edu.sa` → should succeed (200 from `/auth/v1/signup`)
-- A row should appear in `public.profiles` with that user's `id` and `email`
-- Subsequent sign-in works and redirects to the dashboard
+No database, RLS, or business-logic changes — purely a frontend auth-flow fix.
