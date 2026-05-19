@@ -3,6 +3,8 @@ import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useVisitorProgress } from "@/hooks/useVisitorProgress";
+
 import {
   getCourseStatus,
   getSuggestedCourses,
