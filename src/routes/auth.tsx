@@ -110,7 +110,20 @@ function AuthPage() {
             {mode === "signin" ? "Need an account? Sign up" : "Have an account? Sign in"}
           </button>
         </form>
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-card px-2 text-muted-foreground">or</span>
+          </div>
+        </div>
+        <Button type="button" variant="outline" className="w-full" onClick={continueAsVisitor}>
+          Continue as visitor
+        </Button>
+        <p className="text-xs text-muted-foreground text-center mt-2">
+          Browse without an account. Progress saves only in this browser.
+        </p>
       </Card>
+
     </div>
   );
 }
