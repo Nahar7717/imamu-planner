@@ -228,11 +228,15 @@ function Dashboard() {
   );
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (isVisitor) {
+      exitVisitorMode();
+    } else {
+      await supabase.auth.signOut();
+    }
     window.location.href = "/auth";
   };
 
-  if (loading || !user) {
+  if (loading || (!user && !isVisitor)) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
         Loading…
@@ -259,17 +263,28 @@ function Dashboard() {
             </div>
             <div>
               <h1 className="font-bold leading-tight">Academic Planner</h1>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
+              <p className="text-xs text-muted-foreground">{isVisitor ? "Visitor" : user?.email}</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={signOut}>
-            <LogOut className="w-4 h-4 mr-2" /> Sign out
+            <LogOut className="w-4 h-4 mr-2" /> {isVisitor ? "Exit visitor mode" : "Sign out"}
           </Button>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {isVisitor && (
+          <Card className="p-4 flex flex-wrap items-center justify-between gap-3 border-warning/40 bg-warning/5">
+            <p className="text-sm">
+              You're browsing as a visitor. Progress is saved only in this browser.
+            </p>
+            <Button size="sm" onClick={() => { exitVisitorMode(); window.location.href = "/auth"; }}>
+              Sign up to save progress
+            </Button>
+          </Card>
+        )}
         <Tabs defaultValue="dashboard" className="space-y-6">
+
           <TabsList className="flex flex-wrap h-auto">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="cs_core">CS Core</TabsTrigger>
