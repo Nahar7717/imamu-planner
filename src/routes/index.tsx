@@ -19,10 +19,6 @@ import { GraduationCap, CheckCircle2, Clock, BookOpen, TrendingUp, Sparkles, Log
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/auth" });
-  },
   component: Dashboard,
   head: () => ({ meta: [{ title: "Dashboard — Academic Planner" }] }),
 });
