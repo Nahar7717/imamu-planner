@@ -1,6 +1,7 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,20 +12,23 @@ import { GraduationCap } from "lucide-react";
 const ALLOWED_DOMAIN = "@sm.imamu.edu.sa";
 
 export const Route = createFileRoute("/auth")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/" });
-  },
   component: AuthPage,
   head: () => ({ meta: [{ title: "Sign in — Academic Planner" }] }),
 });
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && user) navigate({ to: "/" });
+  }, [authLoading, user, navigate]);
+
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

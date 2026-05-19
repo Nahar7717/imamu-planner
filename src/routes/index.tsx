@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,10 +19,6 @@ import { GraduationCap, CheckCircle2, Clock, BookOpen, TrendingUp, Sparkles, Log
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) throw redirect({ to: "/auth" });
-  },
   component: Dashboard,
   head: () => ({ meta: [{ title: "Dashboard — Academic Planner" }] }),
 });
@@ -133,6 +129,14 @@ function Dashboard() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
   };
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
