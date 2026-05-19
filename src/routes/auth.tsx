@@ -24,6 +24,12 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!authLoading && user) navigate({ to: "/" });
+  }, [authLoading, user, navigate]);
+
+
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
