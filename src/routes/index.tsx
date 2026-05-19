@@ -101,9 +101,13 @@ function Dashboard() {
   });
 
   const completedCodes = useMemo(
-    () => new Set(progress.filter((p) => p.status === "completed").map((p) => p.course_code)),
-    [progress],
+    () =>
+      isVisitor
+        ? visitor.completedCodes
+        : new Set(progress.filter((p) => p.status === "completed").map((p) => p.course_code)),
+    [progress, isVisitor, visitor.completedCodes],
   );
+
 
   const toggle = useMutation({
     mutationFn: async (course: Course) => {
