@@ -1,25 +1,22 @@
-## Problem
+## Add Visitor Mode
 
-Login succeeds on the server (auth logs show 200), but the app navigates the user straight back to `/auth`. The `beforeLoad` guards in `src/routes/index.tsx` and `src/routes/auth.tsx` call `supabase.auth.getSession()` unconditionally. During SSR (and before the browser client has hydrated the session from `localStorage`), that call returns `null`, so the index route throws `redirect({ to: "/auth" })` immediately after sign-in.
+Let users explore the planner without signing in. Progress is saved in the browser only, with a banner inviting them to create an account to save it permanently.
 
-## Fix
+### Changes
 
-Move the auth gate out of `beforeLoad` and into the component, using a hydrated session check. This matches the TanStack + Supabase pattern (gate only after `getUser()`/session hydration completes on the client).
+**1. `src/routes/auth.tsx`** — Add a "Continue as visitor" button below the sign-in form. Clicking it sets `localStorage.visitorMode = "true"` and navigates to `/`.
 
-### `src/routes/index.tsx`
-- Remove the `beforeLoad` redirect.
-- In the `Dashboard` component, use the existing `useAuth()` hook: while `loading`, render a spinner; once loaded, if `!user`, `navigate({ to: "/auth" })`. Only render dashboard content when `user` exists.
-- Keep all data queries gated on `enabled: !!user` (already done for progress; apply same to courses/prerequisites so RLS-protected queries never fire pre-auth).
+**2. `src/hooks/useAuth.tsx`** — Add an `isVisitor` flag (reads from localStorage). Update the auth gate logic so visitor mode counts as "allowed in" without a real Supabase user.
 
-### `src/routes/auth.tsx`
-- Remove the `beforeLoad` redirect.
-- In `AuthPage`, use `useAuth()`; if `user` exists after loading, `navigate({ to: "/" })`.
+**3. `src/routes/index.tsx`** — When `isVisitor` is true (and no user):
+- Skip the redirect to `/auth`.
+- Replace the Supabase `progress` query with a localStorage-backed store (key: `visitor_progress`, an array of completed course codes).
+- Replace the `toggle` mutation with a local state update that writes to localStorage.
+- Show a dismissible banner at the top: "You're browsing as a visitor. Progress is saved only in this browser — [Sign up] to save it to your account."
+- Change the header: replace email with "Visitor"; change "Sign out" to "Exit visitor mode" (clears localStorage and returns to `/auth`).
 
-### `src/routes/__root.tsx`
-- Add a one-time `onAuthStateChange` listener that calls `router.invalidate()` and `queryClient.invalidateQueries()` so cached data refreshes on sign in/out.
+**4. Course completion logic** — Abstract the read/write so the same UI works for both modes. A small helper hook (`useProgress`) returns `{ completedCodes, toggle }` and picks the backend based on `isVisitor` vs authenticated user.
 
-## Why this works
-
-`localStorage`-persisted sessions only exist in the browser. The `useAuth` hook already subscribes to `onAuthStateChange` and calls `getSession()` on mount, so it correctly reports `loading → user`. Gating in the component avoids the SSR/prerender false-negative that's currently bouncing you to `/auth`.
-
-No database, RLS, or business-logic changes — purely a frontend auth-flow fix.
+### Out of scope
+- Migrating visitor progress into the account on sign-up (can be added later).
+- No DB/schema changes.
