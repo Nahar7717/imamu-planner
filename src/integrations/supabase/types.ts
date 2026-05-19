@@ -17,30 +17,78 @@ export type Database = {
       courses: {
         Row: {
           code: string
+          course_type: string
           credits: number
-          group_num: number | null
-          is_elective: boolean
-          is_uni_req: boolean
+          level_num: number | null
           name: string
           notes: string | null
         }
         Insert: {
           code: string
+          course_type: string
           credits: number
-          group_num?: number | null
-          is_elective?: boolean
-          is_uni_req?: boolean
+          level_num?: number | null
           name: string
           notes?: string | null
         }
         Update: {
           code?: string
+          course_type?: string
           credits?: number
-          group_num?: number | null
-          is_elective?: boolean
-          is_uni_req?: boolean
+          level_num?: number | null
           name?: string
           notes?: string | null
+        }
+        Relationships: []
+      }
+      elective_group_courses: {
+        Row: {
+          course_code: string
+          group_id: string
+        }
+        Insert: {
+          course_code: string
+          group_id: string
+        }
+        Update: {
+          course_code?: string
+          group_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elective_group_courses_course_code_fkey"
+            columns: ["course_code"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "elective_group_courses_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "elective_groups"
+            referencedColumns: ["group_id"]
+          },
+        ]
+      }
+      elective_groups: {
+        Row: {
+          group_id: string
+          name: string
+          required_count: number
+          required_credits: number
+        }
+        Insert: {
+          group_id: string
+          name: string
+          required_count: number
+          required_credits: number
+        }
+        Update: {
+          group_id?: string
+          name?: string
+          required_count?: number
+          required_credits?: number
         }
         Relationships: []
       }
@@ -82,7 +130,6 @@ export type Database = {
           full_name: string | null
           id: string
           student_id: string | null
-          updated_at: string
         }
         Insert: {
           batch?: number | null
@@ -91,7 +138,6 @@ export type Database = {
           full_name?: string | null
           id: string
           student_id?: string | null
-          updated_at?: string
         }
         Update: {
           batch?: number | null
@@ -100,7 +146,6 @@ export type Database = {
           full_name?: string | null
           id?: string
           student_id?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
