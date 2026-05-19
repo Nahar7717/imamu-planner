@@ -111,8 +111,14 @@ function Dashboard() {
 
   const toggle = useMutation({
     mutationFn: async (course: Course) => {
+      if (isVisitor) {
+        const was = visitor.completedCodes.has(course.code);
+        visitor.toggle(course.code);
+        return { unmarked: was };
+      }
       if (!user) throw new Error("Not authenticated");
       if (completedCodes.has(course.code)) {
+
         const { error } = await supabase
           .from("student_progress")
           .delete()
