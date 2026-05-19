@@ -130,6 +130,14 @@ function Dashboard() {
     window.location.href = "/auth";
   };
 
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+        Loading…
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card sticky top-0 z-10">
