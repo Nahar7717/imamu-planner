@@ -8,6 +8,8 @@ export type CourseType =
 export type Course = {
   code: string;
   name: string;
+  name_ar: string | null;
+  code_ar: string | null;
   credits: number;
   course_type: CourseType;
   level_num: number | null;
