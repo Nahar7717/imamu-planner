@@ -94,7 +94,7 @@ export function CourseCard({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {/* Prereq tooltip — only on locked courses with missing prereqs */}
-          {status === "locked" && missingPrereqs.length > 0 && (
+          {missingPrereqs.length > 0 && (
             <PrereqTooltip prereqs={missingPrereqs} lang={lang} />
           )}
           <span style={{
