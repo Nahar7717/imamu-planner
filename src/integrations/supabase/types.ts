@@ -17,26 +17,32 @@ export type Database = {
       courses: {
         Row: {
           code: string
+          code_ar: string | null
           course_type: string
           credits: number
           level_num: number | null
           name: string
+          name_ar: string | null
           notes: string | null
         }
         Insert: {
           code: string
+          code_ar?: string | null
           course_type: string
           credits: number
           level_num?: number | null
           name: string
+          name_ar?: string | null
           notes?: string | null
         }
         Update: {
           code?: string
+          code_ar?: string | null
           course_type?: string
           credits?: number
           level_num?: number | null
           name?: string
+          name_ar?: string | null
           notes?: string | null
         }
         Relationships: []
@@ -75,18 +81,21 @@ export type Database = {
         Row: {
           group_id: string
           name: string
+          name_ar: string | null
           required_count: number
           required_credits: number
         }
         Insert: {
           group_id: string
           name: string
+          name_ar?: string | null
           required_count: number
           required_credits: number
         }
         Update: {
           group_id?: string
           name?: string
+          name_ar?: string | null
           required_count?: number
           required_credits?: number
         }
