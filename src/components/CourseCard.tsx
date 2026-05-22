@@ -37,19 +37,10 @@ export function CourseCard({
     lastStatus.current = status;
   }, [status]);
 
-  const borderColor =
-    status === "completed"
-      ? "rgba(249,115,22,0.35)"
-      : capped
-        ? "rgba(255,255,255,0.04)"
-        : status === "available"
-          ? "rgba(249,115,22,0.2)"
-          : "rgba(255,255,255,0.06)";
-
   const bg =
     status === "completed"
-      ? "linear-gradient(180deg, rgba(249,115,22,0.1), rgba(249,115,22,0.03)), var(--color-card)"
-      : "var(--color-card)";
+      ? "rgba(249,115,22,0.07)"
+      : "rgba(255,255,255,0.03)";
 
   return (
     <div
@@ -58,19 +49,22 @@ export function CourseCard({
       className={cn("relative overflow-hidden transition-all duration-150", pulse && "cc-pulse")}
       style={{
         background: bg,
-        border: `1px solid ${borderColor}`,
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderInlineStart: status === "available" ? "2px solid #f97316"
+          : status === "completed" ? "2px solid #f97316"
+          : "1px solid rgba(255,255,255,0.06)",
         borderRadius: 12,
-        padding: "14px 16px",
+        padding: "13px 16px",
         cursor: clickable ? "pointer" : "default",
         opacity: status === "locked" || capped ? 0.5 : 1,
       }}
       onMouseEnter={(e) => {
         if (clickable)
-          (e.currentTarget as HTMLDivElement).style.borderColor =
-            status === "completed" ? "#f97316" : "rgba(249,115,22,0.4)";
+          (e.currentTarget as HTMLDivElement).style.background =
+            status === "completed" ? "rgba(249,115,22,0.1)" : "rgba(255,255,255,0.05)";
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = borderColor;
+        (e.currentTarget as HTMLDivElement).style.background = bg;
       }}
     >
       {/* Shimmer overlay on newly unlocked */}
@@ -78,13 +72,6 @@ export function CourseCard({
         <div className="cc-shimmer absolute inset-0 pointer-events-none" />
       )}
 
-      {/* Orange left rail for completed */}
-      {status === "completed" && (
-        <div
-          className="absolute left-0 top-0 bottom-0"
-          style={{ width: 3, background: "linear-gradient(180deg, #f97316, #ec4899)", boxShadow: "0 0 10px rgba(249,115,22,0.5)" }}
-        />
-      )}
 
       {/* Top row: code · credits · badge */}
       <div className="flex items-center gap-2">

@@ -294,9 +294,9 @@ function Dashboard() {
   );
 
   const catBlocks = [
-    { key: "cs_core" as TabKey, label: s.sections.csCore, done: cat.csCore.doneCredits, total: cat.csCore.totalCredits, sub: `${cat.csCore.done} / ${cat.csCore.total} ${s.sections.courses}`, color: CAT_COLORS[0] },
-    { key: "cs_elec" as TabKey, label: s.sections.csElec, done: Math.min(cat.csElec.doneCredits, cat.csElec.requiredCredits), total: cat.csElec.requiredCredits, sub: `${s.sections.pick} ${cat.csElec.requiredCount} · ${cat.csElec.doneCount} ${s.sections.chosen}`, color: CAT_COLORS[1] },
-    { key: "uni" as TabKey, label: s.sections.uni, done: cat.uniReq.done + Math.min(cat.free.doneCredits, cat.free.requiredCredits), total: cat.uniReq.total + cat.free.requiredCredits, sub: lang === "ar" ? "إجبارية + مجموعات + حرة" : "mandatory + groups + free", color: CAT_COLORS[2] },
+    { key: "cs_core" as TabKey, label: s.sections.csCore, icon: "💻", done: cat.csCore.doneCredits, total: cat.csCore.totalCredits, sub: `${cat.csCore.done} / ${cat.csCore.total} ${s.sections.courses} · ${cat.csCore.totalCredits} ${s.sections.credits}`, color: CAT_COLORS[0], bg: "rgba(139,92,246,0.07)", borderColor: "rgba(139,92,246,0.2)" },
+    { key: "cs_elec" as TabKey, label: s.sections.csElec, icon: "⚡", done: Math.min(cat.csElec.doneCredits, cat.csElec.requiredCredits), total: cat.csElec.requiredCredits, sub: `${cat.csElec.list.length} ${s.sections.courses} · ${s.sections.pick} ${cat.csElec.requiredCount}`, color: CAT_COLORS[1], bg: "rgba(6,182,212,0.07)", borderColor: "rgba(6,182,212,0.2)" },
+    { key: "uni" as TabKey, label: s.sections.uni, icon: "🏛", done: cat.uniReq.done + Math.min(cat.free.doneCredits, cat.free.requiredCredits), total: cat.uniReq.total + cat.free.requiredCredits, sub: lang === "ar" ? "إجبارية + مجموعات + حرة" : "mandatory + groups + free", color: CAT_COLORS[2], bg: "rgba(249,115,22,0.07)", borderColor: "rgba(249,115,22,0.2)" },
   ];
 
   return (
@@ -459,33 +459,30 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* Category 2×2 grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {/* Category 3-column cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {catBlocks.map((c) => (
                 <button
                   key={c.key}
                   onClick={() => setTab(c.key)}
                   style={{
-                    textAlign: "left", cursor: "pointer",
-                    background: "var(--color-card)",
-                    border: "1px solid var(--ds-line-soft, #1a1a1a)",
-                    borderRadius: 12, padding: 14,
-                    display: "flex", flexDirection: "column", gap: 8,
+                    textAlign: isRtl ? "right" : "left", cursor: "pointer",
+                    background: c.bg,
+                    border: `1px solid ${c.borderColor}`,
+                    borderRadius: 12, padding: "16px 18px",
+                    display: "flex", flexDirection: "column",
                     fontFamily: "var(--font-sans)",
                     transition: "border-color 150ms",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--ds-line-strong, #333)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--ds-line-soft, #1a1a1a)")}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ width: 6, height: 6, borderRadius: 2, background: c.color, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, color: "var(--ds-body, #a8a8a8)", fontWeight: 500 }}>{c.label}</span>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>{c.icon}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: c.color, marginBottom: 6 }}>{c.label}</div>
+                  <div style={{ marginBottom: 4 }}>
+                    <span style={{ fontSize: 24, fontWeight: 700, color: "var(--color-foreground)", lineHeight: 1 }}>{c.done}</span>
+                    <span style={{ fontSize: 13, color: "var(--ds-muted, #71717a)" }}> / {c.total}</span>
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 500, color: "var(--color-foreground)", letterSpacing: "-0.02em", lineHeight: 1 }}>
-                    {c.done}<span style={{ color: "var(--ds-muted, #888)", fontSize: 14, marginLeft: 2 }}>/{c.total}</span>
-                  </div>
-                  <MiniBar value={c.total > 0 ? c.done / c.total : 0} color={c.color} />
-                  <div style={{ fontSize: 10, color: "var(--ds-muted-soft, #666)", fontFamily: "var(--font-mono)" }}>{c.sub}</div>
+                  <div style={{ fontSize: 11, color: "var(--ds-muted, #71717a)", marginBottom: 10 }}>{c.sub}</div>
+                  <MiniBar value={c.total > 0 ? c.done / c.total : 0} color={c.color} height={3} />
                 </button>
               ))}
             </div>
