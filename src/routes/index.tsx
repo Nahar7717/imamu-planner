@@ -177,8 +177,11 @@ function Dashboard() {
     (course: Course) =>
       prerequisites
         .filter((p) => p.course_code === course.code)
-        .map((p) => p.prereq_code),
-    [prerequisites],
+        .map((p) => {
+          const c = coursesByCode.get(p.prereq_code);
+          return { code: p.prereq_code, code_ar: c?.code_ar ?? null };
+        }),
+    [prerequisites, coursesByCode],
   );
 
   // Credit cap: an available course is capped when its group's required credits are already met
@@ -268,8 +271,12 @@ function Dashboard() {
   const overallPct = overallTotal > 0 ? overallDone / overallTotal : 0;
 
   const suggested = useMemo(
-    () => getSuggestedCourses(courses, completedCodes, prerequisites),
-    [courses, completedCodes, prerequisites],
+    () => getSuggestedCourses(courses, completedCodes, prerequisites, {
+      core: Math.max(0, cat.csCore.totalCredits - cat.csCore.doneCredits),
+      elec: Math.max(0, cat.csElec.requiredCredits - cat.csElec.doneCredits),
+      uni:  Math.max(0, cat.uniReq.total - cat.uniReq.done),
+    }),
+    [courses, completedCodes, prerequisites, cat],
   );
 
   const signOut = async () => {
