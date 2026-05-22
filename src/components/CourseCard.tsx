@@ -46,7 +46,7 @@ export function CourseCard({
     <div
       role={clickable ? "button" : "presentation"}
       onClick={clickable ? onToggle : undefined}
-      className={cn("relative overflow-hidden transition-all duration-150", pulse && "cc-pulse")}
+      className={cn("relative transition-all duration-150", pulse && "cc-pulse")}
       style={{
         background: bg,
         border: "1px solid rgba(255,255,255,0.06)",
@@ -67,9 +67,11 @@ export function CourseCard({
         (e.currentTarget as HTMLDivElement).style.background = bg;
       }}
     >
-      {/* Shimmer overlay on newly unlocked */}
+      {/* Shimmer overlay on newly unlocked — own overflow clip so it doesn't affect tooltip */}
       {recentlyUnlocked && status === "available" && (
-        <div className="cc-shimmer absolute inset-0 pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[12px]">
+          <div className="cc-shimmer absolute inset-0" />
+        </div>
       )}
 
       {/* Single row: [code + name] | [! prereqs] [cr] [badge] */}
