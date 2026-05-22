@@ -456,7 +456,7 @@ function Dashboard() {
                   <div style={{ fontSize: 11, color: "#52525b" }}>
                     {overallDone >= overallTotal
                       ? s.dashboard.degreeComplete
-                      : `${s.dashboard.onTrack} · ${s.dashboard.semestersRemain(Math.ceil((overallTotal - overallDone) / 15))}`}
+                      : `${s.dashboard.onTrack} · ${s.dashboard.semestersRemain(Math.ceil((overallTotal - overallDone) / 19))}`}
                   </div>
                 </div>
                 <ProgressRing value={overallPct} size={76} stroke={7} label={`${Math.round(overallPct * 100)}%`} sub={s.dashboard.degree_sub} />
