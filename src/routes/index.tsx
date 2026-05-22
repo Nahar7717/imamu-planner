@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
   head: () => ({ meta: [{ title: "Dashboard — Academic Planner" }] }),
 });
 
-const TAB_KEYS = ["dashboard", "cs_core", "cs_elec", "uni", "free"] as const;
+const TAB_KEYS = ["dashboard", "cs_core", "cs_elec", "uni"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 // ─── Category accent colors ───
@@ -294,8 +294,7 @@ function Dashboard() {
   const catBlocks = [
     { key: "cs_core" as TabKey, label: s.sections.csCore, done: cat.csCore.doneCredits, total: cat.csCore.totalCredits, sub: `${cat.csCore.done} / ${cat.csCore.total} ${s.sections.courses}`, color: CAT_COLORS[0] },
     { key: "cs_elec" as TabKey, label: s.sections.csElec, done: Math.min(cat.csElec.doneCredits, cat.csElec.requiredCredits), total: cat.csElec.requiredCredits, sub: `${s.sections.pick} ${cat.csElec.requiredCount} · ${cat.csElec.doneCount} ${s.sections.chosen}`, color: CAT_COLORS[1] },
-    { key: "uni" as TabKey, label: s.sections.uni, done: cat.uniReq.done, total: cat.uniReq.total, sub: lang === "ar" ? "إجبارية + مجموعات" : "mandatory + groups", color: CAT_COLORS[2] },
-    { key: "free" as TabKey, label: s.sections.free, done: Math.min(cat.free.doneCredits, cat.free.requiredCredits), total: cat.free.requiredCredits, sub: `${s.sections.pick} ${cat.free.requiredCount} · ${cat.free.doneCount} ${s.sections.chosen}`, color: CAT_COLORS[3] },
+    { key: "uni" as TabKey, label: s.sections.uni, done: cat.uniReq.done + Math.min(cat.free.doneCredits, cat.free.requiredCredits), total: cat.uniReq.total + cat.free.requiredCredits, sub: lang === "ar" ? "إجبارية + مجموعات + حرة" : "mandatory + groups + free", color: CAT_COLORS[2] },
   ];
 
   return (
@@ -598,16 +597,16 @@ function Dashboard() {
                 </div>
               ) : null
             )}
-          </div>
-        )}
 
-        {/* ── FREE ELECTIVES ── */}
-        {tab === "free" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <SectionHeader kicker={s.sections.category} title={s.sections.free} meta={`${s.sections.pick} ${cat.free.requiredCount} ${s.sections.of} ${cat.free.list.length} · ${cat.free.doneCount} ${s.sections.chosen}`} color={CAT_COLORS[3]} />
-            <PickGroupCard required={cat.free.requiredCount} done={cat.free.doneCount} credits={`${Math.min(cat.free.doneCredits, cat.free.requiredCredits)} / ${cat.free.requiredCredits} cr`} pct={cat.free.requiredCredits > 0 ? Math.min(1, cat.free.doneCredits / cat.free.requiredCredits) : 0} color={CAT_COLORS[3]} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {cat.free.list.map(renderCard)}
+            {/* ── FREE ELECTIVES (merged) ── */}
+            <div style={{ borderTop: "1px solid var(--ds-line-soft)", paddingTop: 20 }}>
+              <SectionHeader kicker={s.sections.category} title={s.sections.free} meta={`${s.sections.pick} ${cat.free.requiredCount} ${s.sections.of} ${cat.free.list.length} · ${cat.free.doneCount} ${s.sections.chosen}`} color={CAT_COLORS[3]} />
+              <div style={{ marginTop: 12 }}>
+                <PickGroupCard required={cat.free.requiredCount} done={cat.free.doneCount} credits={`${Math.min(cat.free.doneCredits, cat.free.requiredCredits)} / ${cat.free.requiredCredits} cr`} pct={cat.free.requiredCredits > 0 ? Math.min(1, cat.free.doneCredits / cat.free.requiredCredits) : 0} color={CAT_COLORS[3]} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                {cat.free.list.map(renderCard)}
+              </div>
             </div>
           </div>
         )}

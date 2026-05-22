@@ -7,7 +7,6 @@ export const T = {
       cs_core: "CS Core",
       cs_elec: "CS Electives",
       uni: "University",
-      free: "Free",
     },
     header: {
       title: "Academic Planner",
@@ -79,7 +78,6 @@ export const T = {
       cs_core: "مقررات التخصص",
       cs_elec: "اختيارات التخصص",
       uni: "متطلبات الجامعة",
-      free: "اختيارات حرة",
     },
     header: {
       title: "المخطط الأكاديمي",
