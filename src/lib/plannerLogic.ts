@@ -47,11 +47,24 @@ export function getSuggestedCourses(
   courses: Course[],
   completedCodes: Set<string>,
   prerequisites: Prerequisite[],
-  limit = 5,
+  limit = 8,
 ): Course[] {
-  return courses
-    .filter((c) => c.course_type === "cs_core")
-    .filter((c) => getCourseStatus(c, completedCodes, prerequisites) === "available")
-    .sort((a, b) => (a.level_num ?? 99) - (b.level_num ?? 99))
-    .slice(0, limit);
+  const isAvailable = (c: Course) =>
+    getCourseStatus(c, completedCodes, prerequisites) === "available";
+  const byLevel = (a: Course, b: Course) =>
+    (a.level_num ?? 99) - (b.level_num ?? 99);
+
+  const core = courses
+    .filter((c) => c.course_type === "cs_core" && isAvailable(c))
+    .sort(byLevel);
+
+  const elec = courses
+    .filter((c) => c.course_type === "cs_elective" && isAvailable(c))
+    .sort(byLevel);
+
+  const uni = courses
+    .filter((c) => (c.course_type === "uni_mandatory" || c.course_type === "uni_group") && isAvailable(c))
+    .sort(byLevel);
+
+  return [...core, ...elec, ...uni].slice(0, limit);
 }

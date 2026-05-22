@@ -268,7 +268,7 @@ function Dashboard() {
   const overallPct = overallTotal > 0 ? overallDone / overallTotal : 0;
 
   const suggested = useMemo(
-    () => getSuggestedCourses(courses, completedCodes, prerequisites, 4),
+    () => getSuggestedCourses(courses, completedCodes, prerequisites),
     [courses, completedCodes, prerequisites],
   );
 
