@@ -8,6 +8,7 @@ import {
   getCourseStatus,
   getSuggestedCourses,
   type Course,
+  type Major,
   type Prerequisite,
   type ElectiveGroup,
   type ElectiveGroupCourse,
@@ -101,6 +102,41 @@ function Dashboard() {
     },
   });
 
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("profiles") as any)
+        .select("major_id")
+        .eq("id", user!.id)
+        .single();
+      if (error) return null;
+      return data as { major_id: string | null };
+    },
+  });
+
+  const { data: major } = useQuery({
+    queryKey: ["major", profile?.major_id],
+    enabled: !!profile?.major_id,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("majors") as any)
+        .select("*")
+        .eq("id", profile!.major_id)
+        .single();
+      if (error) return null;
+      return data as Major;
+    },
+  });
+
+  // Active major id — visitors default to 'cs'
+  const activeMajorId = isVisitor ? "cs" : (profile?.major_id ?? "cs");
+
+  // Filter everything to the user's active major
+  const majorCourses = useMemo(
+    () => courses.filter((c) => !c.major_id || c.major_id === activeMajorId),
+    [courses, activeMajorId],
+  );
+
   const completedCodes = useMemo(
     () =>
       isVisitor
@@ -142,7 +178,7 @@ function Dashboard() {
         const newCompleted = new Set(completedCodes);
         newCompleted.add(course.code);
         const unlocked = new Set(
-          courses
+          majorCourses
             .filter((c) => {
               const before = getCourseStatus(c, completedCodes, prerequisites);
               const after = getCourseStatus(c, newCompleted, prerequisites);
@@ -193,19 +229,19 @@ function Dashboard() {
         const group = groups.find((g) => g.group_id === gc.group_id);
         if (!group) continue;
         const memberCodes = groupCourses.filter((g) => g.group_id === gc.group_id).map((g) => g.course_code);
-        const doneCredits = courses
+        const doneCredits = majorCourses
           .filter((c) => memberCodes.includes(c.code) && completedCodes.has(c.code))
           .reduce((s, c) => s + c.credits, 0);
         if (doneCredits >= group.required_credits) return true;
       }
       return false;
     },
-    [groupCourses, groups, courses, completedCodes],
+    [groupCourses, groups, majorCourses, completedCodes],
   );
 
   const cat = useMemo(() => {
-    const csCore = courses.filter((c) => c.course_type === "cs_core");
-    const uniMandatory = courses.filter((c) => c.course_type === "uni_mandatory");
+    const csCore = majorCourses.filter((c) => c.course_type === "cs_core");
+    const uniMandatory = majorCourses.filter((c) => c.course_type === "uni_mandatory");
 
     const completedCount = (list: Course[]) => list.filter((c) => completedCodes.has(c.code)).length;
     const completedCredits = (list: Course[]) =>
@@ -256,7 +292,7 @@ function Dashboard() {
       free,
       uniReq: { done: uniReqDone, total: uniReqRequired },
     };
-  }, [courses, groups, groupCourses, coursesByCode, completedCodes]);
+  }, [majorCourses, groups, groupCourses, coursesByCode, completedCodes]);
 
   const overallTotal =
     cat.csCore.totalCredits +
@@ -271,12 +307,12 @@ function Dashboard() {
   const overallPct = overallTotal > 0 ? overallDone / overallTotal : 0;
 
   const suggested = useMemo(
-    () => getSuggestedCourses(courses, completedCodes, prerequisites, {
+    () => getSuggestedCourses(majorCourses, completedCodes, prerequisites, {
       core: Math.max(0, cat.csCore.totalCredits - cat.csCore.doneCredits),
       elec: Math.max(0, cat.csElec.requiredCredits - cat.csElec.doneCredits),
       uni:  Math.max(0, cat.uniReq.total - cat.uniReq.done),
     }),
-    [courses, completedCodes, prerequisites, cat],
+    [majorCourses, completedCodes, prerequisites, cat],
   );
 
   const signOut = async () => {
