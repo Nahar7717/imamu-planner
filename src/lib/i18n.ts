@@ -28,7 +28,7 @@ export const T = {
       whatNext: "What to take next",
       unlocked: "Unlocked & in priority order",
       open: "open",
-      degree_sub: "degree",
+      degree_sub: "completion",
     },
     sections: {
       category: "Category",
@@ -99,7 +99,7 @@ export const T = {
       whatNext: "ما التالي؟",
       unlocked: "مفتوحة وبترتيب الأولوية",
       open: "مفتوحة",
-      degree_sub: "الدرجة",
+      degree_sub: "نسبة الاكمال",
     },
     sections: {
       category: "التصنيف",

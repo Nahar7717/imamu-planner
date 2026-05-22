@@ -630,9 +630,13 @@ function ProgressRing({ value, size, stroke, label, sub }: {
           style={{ transition: "stroke-dashoffset 700ms cubic-bezier(0.4,0,0.2,1)" }}
         />
       </svg>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-        <div style={{ fontSize: 26, fontWeight: 600, color: "var(--color-foreground)", lineHeight: 1, letterSpacing: "-0.04em" }}>{label}</div>
-        {sub && <div style={{ fontSize: 10, color: "var(--ds-muted, #71717a)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{sub}</div>}
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 2 }}>
+        <div style={{
+          fontSize: 20, fontWeight: 700, lineHeight: 1, letterSpacing: "-0.03em",
+          background: "linear-gradient(135deg, #f97316, #ec4899)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        }}>{label}</div>
+        {sub && <div style={{ fontSize: 9, color: "var(--ds-muted, #71717a)", letterSpacing: "0.06em", fontWeight: 500, maxWidth: size - stroke * 4, lineHeight: 1.3 }}>{sub}</div>}
       </div>
     </div>
   );
