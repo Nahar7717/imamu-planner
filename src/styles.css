@@ -166,9 +166,12 @@
   --ds-muted-soft: #666666;
   --ds-blue-glow: #1a26ff;
   --ds-blue-active: #0005a3;
-  --ds-cyan: #00d4ff;
-  --ds-violet: #7b3aed;
+  --ds-cyan: #06b6d4;
+  --ds-violet: #8b5cf6;
   --ds-green: #33d17a;
+  --ds-orange: #f97316;
+  --ds-orange-glow: rgba(249,115,22,0.45);
+  --ds-pink: #ec4899;
 }
 
 @layer base {
@@ -186,9 +189,9 @@
 
 /* ── Course card animations ── */
 @keyframes ccPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(26,38,255,0.55); }
-  40%  { box-shadow: 0 0 0 10px rgba(26,38,255,0); }
-  100% { box-shadow: 0 0 0 0 rgba(26,38,255,0); }
+  0%   { box-shadow: 0 0 0 0 rgba(249,115,22,0.55); }
+  40%  { box-shadow: 0 0 0 10px rgba(249,115,22,0); }
+  100% { box-shadow: 0 0 0 0 rgba(249,115,22,0); }
 }
 .cc-pulse { animation: ccPulse 700ms cubic-bezier(0.4,0,0.2,1); }
 
@@ -198,7 +201,7 @@
   100% { transform: translateX(120%); opacity: 0; }
 }
 .cc-shimmer {
-  background: linear-gradient(120deg, transparent 30%, rgba(26,38,255,0.35) 50%, transparent 70%);
+  background: linear-gradient(120deg, transparent 30%, rgba(249,115,22,0.3) 50%, transparent 70%);
   animation: ccShimmer 1400ms ease-out 200ms 2;
 }
 
@@ -208,8 +211,8 @@
   content: "";
   position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: radial-gradient(ellipse 60% 50% at 50% 50%,
-    rgba(26,38,255,0.55) 0%, rgba(0,7,205,0.28) 25%,
-    rgba(0,7,205,0.08) 50%, transparent 75%);
+    rgba(249,115,22,0.45) 0%, rgba(236,72,153,0.2) 30%,
+    rgba(249,115,22,0.06) 55%, transparent 75%);
 }
 
 /* ── Tab strip — hide scrollbar ── */

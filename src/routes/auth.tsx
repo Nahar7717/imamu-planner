@@ -78,10 +78,10 @@ function AuthPage() {
       <div style={{ textAlign: "center", marginBottom: 32 }}>
         <div style={{
           width: 56, height: 56, borderRadius: 12,
-          background: "#0007cd",
+          background: "linear-gradient(135deg, #f97316, #ec4899)",
           display: "flex", alignItems: "center", justifyContent: "center",
           margin: "0 auto 20px",
-          boxShadow: "0 0 32px rgba(26,38,255,0.55)",
+          boxShadow: "0 0 32px rgba(249,115,22,0.5)",
         }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -164,10 +164,10 @@ function AuthPage() {
             style={{
               marginTop: 4,
               padding: "12px 16px", border: "none", cursor: loading ? "not-allowed" : "pointer",
-              background: "#0007cd", color: "#fff",
+              background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff",
               borderRadius: 8, fontSize: 14, fontWeight: 500,
               fontFamily: "var(--font-sans)",
-              boxShadow: "0 0 24px rgba(26,38,255,0.35)",
+              boxShadow: "0 0 24px rgba(249,115,22,0.4)",
               opacity: loading ? 0.7 : 1,
               transition: "background 150ms",
             }}
@@ -229,7 +229,7 @@ function FieldInput({
           borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)",
           outline: "none",
         }}
-        onFocus={(e) => (e.target.style.borderColor = "#1a26ff")}
+        onFocus={(e) => (e.target.style.borderColor = "#f97316")}
         onBlur={(e) => (e.target.style.borderColor = "var(--ds-line-strong, #333)")}
       />
     </label>

@@ -39,16 +39,16 @@ export function CourseCard({
 
   const borderColor =
     status === "completed"
-      ? "rgba(26,38,255,0.4)"
+      ? "rgba(249,115,22,0.35)"
       : capped
-        ? "var(--ds-line-soft)"
+        ? "rgba(255,255,255,0.04)"
         : status === "available"
-          ? "var(--ds-line-strong)"
-          : "var(--ds-line-soft)";
+          ? "rgba(249,115,22,0.2)"
+          : "rgba(255,255,255,0.06)";
 
   const bg =
     status === "completed"
-      ? "linear-gradient(180deg, rgba(0,7,205,0.18), rgba(0,7,205,0.05)), var(--color-card)"
+      ? "linear-gradient(180deg, rgba(249,115,22,0.1), rgba(249,115,22,0.03)), var(--color-card)"
       : "var(--color-card)";
 
   return (
@@ -67,7 +67,7 @@ export function CourseCard({
       onMouseEnter={(e) => {
         if (clickable)
           (e.currentTarget as HTMLDivElement).style.borderColor =
-            status === "completed" ? "var(--ds-blue-glow)" : "var(--color-foreground)";
+            status === "completed" ? "#f97316" : "rgba(249,115,22,0.4)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLDivElement).style.borderColor = borderColor;
@@ -78,11 +78,11 @@ export function CourseCard({
         <div className="cc-shimmer absolute inset-0 pointer-events-none" />
       )}
 
-      {/* Blue left rail for completed */}
+      {/* Orange left rail for completed */}
       {status === "completed" && (
         <div
           className="absolute left-0 top-0 bottom-0"
-          style={{ width: 3, background: "var(--ds-blue-glow)", boxShadow: "0 0 12px var(--ds-blue-glow)" }}
+          style={{ width: 3, background: "linear-gradient(180deg, #f97316, #ec4899)", boxShadow: "0 0 10px rgba(249,115,22,0.5)" }}
         />
       )}
 
@@ -92,7 +92,7 @@ export function CourseCard({
           className="text-xs font-medium whitespace-nowrap"
           style={{
             fontFamily: "var(--font-mono)",
-            color: status === "completed" ? "var(--ds-blue-glow)" : "var(--color-foreground)",
+            color: status === "completed" ? "#f97316" : "var(--ds-muted, #71717a)",
             letterSpacing: "0.02em",
           }}
         >
@@ -157,7 +157,7 @@ function StatusBadge({ status, capped, strings }: {
 
   if (status === "completed") {
     return (
-      <span style={{ ...badgeBase, background: "#0007cd", color: "#fff", boxShadow: "0 0 14px rgba(26,38,255,0.45)" }}>
+      <span style={{ ...badgeBase, background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff", boxShadow: "0 0 12px rgba(249,115,22,0.4)" }}>
         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="20 6 9 17 4 12" />
         </svg>
@@ -167,13 +167,13 @@ function StatusBadge({ status, capped, strings }: {
   }
   if (status === "available") {
     return (
-      <span style={{ ...badgeBase, background: "transparent", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong)" }}>
+      <span style={{ ...badgeBase, background: "rgba(249,115,22,0.1)", color: "#f97316", border: "1px solid rgba(249,115,22,0.25)" }}>
         {strings.open}
       </span>
     );
   }
   return (
-    <span style={{ ...badgeBase, background: "transparent", color: "var(--ds-muted)", border: "1px solid var(--ds-line-soft)" }}>
+    <span style={{ ...badgeBase, background: "rgba(255,255,255,0.03)", color: "var(--ds-muted, #52525b)", border: "1px solid rgba(255,255,255,0.07)" }}>
       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />

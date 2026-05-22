@@ -29,7 +29,7 @@ const TAB_KEYS = ["dashboard", "cs_core", "cs_elec", "uni"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 // ─── Category accent colors ───
-const CAT_COLORS = ["#1a26ff", "#00d4ff", "#7b3aed", "#33d17a"] as const;
+const CAT_COLORS = ["#8b5cf6", "#06b6d4", "#f97316", "#ec4899"] as const;
 
 function Dashboard() {
   const { user, loading, isVisitor, exitVisitorMode } = useAuth();
@@ -313,9 +313,9 @@ function Dashboard() {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <div style={{
             width: 32, height: 32, borderRadius: 8,
-            background: "#0007cd",
+            background: "linear-gradient(135deg, #f97316, #ec4899)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 0 16px rgba(26,38,255,0.4)",
+            boxShadow: "0 0 16px rgba(249,115,22,0.45)",
             flexShrink: 0,
           }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -369,20 +369,22 @@ function Dashboard() {
         </div>
 
         {/* Tab strip */}
-        <div className="tab-strip" style={{ display: "flex", gap: 4, overflowX: "auto", paddingBottom: 10 }}>
+        <div className="tab-strip" style={{ display: "flex", gap: 0, overflowX: "auto", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
               style={{
-                padding: "7px 10px", flexShrink: 0, cursor: "pointer",
-                background: tab === t.key ? "var(--ds-surface-elevated, #222)" : "transparent",
-                color: tab === t.key ? "var(--color-foreground)" : "var(--ds-muted, #888)",
-                border: tab === t.key ? "1px solid var(--ds-line-strong, #333)" : "1px solid transparent",
-                borderRadius: 9999,
-                fontSize: 11.5, fontWeight: 500, fontFamily: "var(--font-sans)",
+                padding: "10px 16px", flexShrink: 0, cursor: "pointer",
+                background: "transparent",
+                color: tab === t.key ? "#f97316" : "var(--ds-muted, #52525b)",
+                border: "none",
+                borderBottom: tab === t.key ? "2px solid #f97316" : "2px solid transparent",
+                borderRadius: 0,
+                fontSize: 12, fontWeight: 500, fontFamily: "var(--font-sans)",
                 whiteSpace: "nowrap",
                 transition: "all 150ms",
+                marginBottom: -1,
               }}
             >
               {t.label}
@@ -398,8 +400,8 @@ function Dashboard() {
         {isVisitor && (
           <div style={{
             marginBottom: 16, padding: "12px 14px",
-            background: "rgba(26,38,255,0.08)",
-            border: "1px solid rgba(26,38,255,0.25)",
+            background: "rgba(249,115,22,0.07)",
+            border: "1px solid rgba(249,115,22,0.2)",
             borderRadius: 12,
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
           }}>
@@ -410,10 +412,10 @@ function Dashboard() {
               onClick={() => { exitVisitorMode(); window.location.href = "/auth"; }}
               style={{
                 padding: "8px 14px", cursor: "pointer",
-                background: "#0007cd", color: "#fff",
+                background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff",
                 border: "none", borderRadius: 8,
                 fontSize: 12, fontWeight: 500, fontFamily: "var(--font-sans)",
-                boxShadow: "0 0 16px rgba(26,38,255,0.35)",
+                boxShadow: "0 0 16px rgba(249,115,22,0.35)",
               }}
             >
               {s.visitor.signUp}
@@ -426,10 +428,10 @@ function Dashboard() {
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
             {/* Hero progress ring */}
-            <div className="spotlight-glow" style={{
-              background: "var(--color-card)",
-              border: "1px solid var(--ds-line-soft, #1a1a1a)",
-              borderRadius: 16, padding: 20, overflow: "hidden",
+            <div style={{
+              background: "linear-gradient(135deg, #18181b 0%, #1c1017 50%, #1a1018 100%)",
+              border: "1px solid rgba(249,115,22,0.15)",
+              borderRadius: 16, padding: 20, overflow: "hidden", position: "relative",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
                 <ProgressRing value={overallPct} size={108} stroke={8} label={`${Math.round(overallPct * 100)}%`} sub={s.dashboard.degree_sub} />
@@ -496,7 +498,7 @@ function Dashboard() {
               borderRadius: 12,
               display: "flex", alignItems: "center", gap: 10,
             }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--ds-surface-elevated, #222)", display: "flex", alignItems: "center", justifyContent: "center", color: "#00d4ff", flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(249,115,22,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", flexShrink: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
                 </svg>
@@ -522,9 +524,10 @@ function Dashboard() {
                     <div style={{ fontSize: 16, fontWeight: 500, color: "var(--color-foreground)", marginTop: 2 }}>{s.dashboard.unlocked}</div>
                   </div>
                   <div style={{
-                    fontSize: 10, padding: "3px 8px", borderRadius: 999,
-                    background: "var(--ds-surface-elevated, #222)",
-                    color: "var(--ds-body, #a8a8a8)", fontFamily: "var(--font-mono)",
+                    fontSize: 10, padding: "3px 10px", borderRadius: 999,
+                    background: "rgba(249,115,22,0.1)",
+                    color: "#f97316", fontFamily: "var(--font-mono)",
+                    border: "1px solid rgba(249,115,22,0.2)",
                   }}>
                     {suggested.length} {s.dashboard.open}
                   </div>
@@ -552,11 +555,11 @@ function Dashboard() {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <div style={{
                       width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                      background: allDone ? "#0007cd" : "var(--ds-surface-elevated, #222)",
-                      color: allDone ? "#fff" : "var(--color-foreground)",
+                      background: allDone ? "linear-gradient(135deg, #f97316, #ec4899)" : "rgba(255,255,255,0.05)",
+                      color: allDone ? "#fff" : "var(--ds-muted, #71717a)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 12, fontWeight: 600, fontFamily: "var(--font-mono)",
-                      boxShadow: allDone ? "0 0 14px rgba(26,38,255,0.45)" : "none",
+                      boxShadow: allDone ? "0 0 14px rgba(249,115,22,0.4)" : "none",
                     }}>L{lvl}</div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, color: "var(--color-foreground)" }}>{s.sections.level} {lvl}</div>
@@ -637,13 +640,20 @@ function ProgressRing({ value, size, stroke, label, sub }: {
   const r = (size - stroke) / 2;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - Math.min(1, value));
+  const gradId = "ring-grad";
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="#222" strokeWidth={stroke} fill="none" />
+        <defs>
+          <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#f97316" />
+            <stop offset="100%" stopColor="#ec4899" />
+          </linearGradient>
+        </defs>
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} fill="none" />
         <circle
           cx={size / 2} cy={size / 2} r={r}
-          stroke="#1a26ff" strokeWidth={stroke} fill="none"
+          stroke={`url(#${gradId})`} strokeWidth={stroke} fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
@@ -651,14 +661,14 @@ function ProgressRing({ value, size, stroke, label, sub }: {
         />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-        <div style={{ fontSize: 26, fontWeight: 500, color: "var(--color-foreground)", lineHeight: 1, letterSpacing: "-0.04em" }}>{label}</div>
-        {sub && <div style={{ fontSize: 10, color: "var(--ds-muted, #888)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{sub}</div>}
+        <div style={{ fontSize: 26, fontWeight: 600, color: "var(--color-foreground)", lineHeight: 1, letterSpacing: "-0.04em" }}>{label}</div>
+        {sub && <div style={{ fontSize: 10, color: "var(--ds-muted, #71717a)", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 600 }}>{sub}</div>}
       </div>
     </div>
   );
 }
 
-function MiniBar({ value, color = "#1a26ff", height = 4 }: { value: number; color?: string; height?: number }) {
+function MiniBar({ value, color = "#f97316", height = 4 }: { value: number; color?: string; height?: number }) {
   return (
     <div style={{ width: "100%", height, background: "var(--ds-line-strong, #333)", borderRadius: 999, overflow: "hidden" }}>
       <div style={{ width: `${Math.min(100, value * 100)}%`, height: "100%", background: color, borderRadius: 999, transition: "width 600ms cubic-bezier(0.4,0,0.2,1)" }} />
