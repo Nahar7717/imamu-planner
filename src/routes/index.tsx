@@ -273,7 +273,7 @@ function Dashboard() {
     window.location.href = "/auth";
   };
 
-  if (loading || (!user && !isVisitor)) {
+  if ((loading && !isVisitor) || (!user && !isVisitor)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--color-background)", color: "var(--ds-muted)" }}>
         Loading…
