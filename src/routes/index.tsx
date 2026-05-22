@@ -332,6 +332,11 @@ function Dashboard() {
     );
   }
 
+  // Logged-in user hasn't picked a major yet → show picker
+  if (user && profile && !profile.major_id) {
+    return <MajorPicker userId={user.id} lang={lang} />;
+  }
+
   const renderCard = (c: Course) => (
     <CourseCard
       key={c.code}
@@ -721,6 +726,147 @@ function SubHeading({ label, sub }: { label: string; sub?: string }) {
     <div style={{ marginBottom: 10 }}>
       <div style={{ fontSize: 14, fontWeight: 500, color: "var(--color-foreground)" }}>{label}</div>
       {sub && <div style={{ fontSize: 11, color: "var(--ds-muted, #888)", fontFamily: "var(--font-mono)", marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ─── Major Picker (shown when user has no major_id set) ──────────────────────
+
+function MajorPicker({ userId, lang }: { userId: string; lang: string }) {
+  const qc = useQueryClient();
+  const [selectedCollege, setSelectedCollege] = useState("");
+  const [selectedMajor, setSelectedMajor] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data: colleges = [] } = useQuery({
+    queryKey: ["colleges"],
+    queryFn: async () => {
+      const { data } = await (supabase.from("colleges") as any).select("*").order("name");
+      return data as { id: string; name: string; name_ar: string | null }[];
+    },
+  });
+
+  const { data: majors = [] } = useQuery({
+    queryKey: ["majors"],
+    queryFn: async () => {
+      const { data } = await (supabase.from("majors") as any).select("*").order("name");
+      return data as { id: string; college_id: string; name: string; name_ar: string | null }[];
+    },
+  });
+
+  const filteredMajors = selectedCollege
+    ? majors.filter((m) => m.college_id === selectedCollege)
+    : majors;
+
+  const save = async () => {
+    if (!selectedMajor) return;
+    setSaving(true);
+    await (supabase.from("profiles") as any).upsert(
+      { id: userId, major_id: selectedMajor },
+      { onConflict: "id" },
+    );
+    qc.invalidateQueries({ queryKey: ["profile", userId] });
+    setSaving(false);
+  };
+
+  const isAr = lang === "ar";
+
+  return (
+    <div className="spotlight-glow" style={{
+      minHeight: "100vh", background: "var(--color-background)",
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "40px 24px",
+    }}>
+      <div style={{
+        width: "100%", maxWidth: 360,
+        background: "var(--color-card)",
+        border: "1px solid var(--ds-line-strong, #333)",
+        borderRadius: 16, padding: 24,
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: "linear-gradient(135deg, #f97316, #ec4899)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            margin: "0 auto 16px",
+            boxShadow: "0 0 24px rgba(249,115,22,0.4)",
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c0 1.66 4 3 6 3s6-1.34 6-3v-5" />
+            </svg>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 600, color: "var(--color-foreground)", marginBottom: 6 }}>
+            {isAr ? "اختر تخصصك" : "Choose your major"}
+          </div>
+          <div style={{ fontSize: 13, color: "var(--ds-muted)" }}>
+            {isAr ? "سيتم تحميل خطتك الدراسية بناءً على تخصصك" : "Your study plan will load based on your major"}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* College selector */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ fontSize: 11, color: "var(--ds-muted)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>
+              {isAr ? "الكلية" : "College"}
+            </span>
+            <select
+              value={selectedCollege}
+              onChange={(e) => { setSelectedCollege(e.target.value); setSelectedMajor(""); }}
+              style={{
+                width: "100%", padding: "10px 12px",
+                background: "#000", color: selectedCollege ? "var(--color-foreground)" : "var(--ds-muted)",
+                border: "1px solid var(--ds-line-strong, #333)",
+                borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)", outline: "none", appearance: "none",
+              }}
+            >
+              <option value="">{isAr ? "اختر الكلية" : "Select college"}</option>
+              {colleges.map((c) => (
+                <option key={c.id} value={c.id}>{isAr && c.name_ar ? c.name_ar : c.name}</option>
+              ))}
+            </select>
+          </label>
+
+          {/* Major selector */}
+          <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span style={{ fontSize: 11, color: "var(--ds-muted)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>
+              {isAr ? "التخصص" : "Major"}
+            </span>
+            <select
+              value={selectedMajor}
+              onChange={(e) => setSelectedMajor(e.target.value)}
+              disabled={filteredMajors.length === 0}
+              style={{
+                width: "100%", padding: "10px 12px",
+                background: "#000", color: selectedMajor ? "var(--color-foreground)" : "var(--ds-muted)",
+                border: "1px solid var(--ds-line-strong, #333)",
+                borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)", outline: "none", appearance: "none",
+                opacity: filteredMajors.length === 0 ? 0.5 : 1, cursor: filteredMajors.length === 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              <option value="">{isAr ? "اختر التخصص" : "Select major"}</option>
+              {filteredMajors.map((m) => (
+                <option key={m.id} value={m.id}>{isAr && m.name_ar ? m.name_ar : m.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            onClick={save}
+            disabled={!selectedMajor || saving}
+            style={{
+              marginTop: 4, padding: "12px 16px", border: "none",
+              background: selectedMajor ? "linear-gradient(135deg, #f97316, #ec4899)" : "rgba(255,255,255,0.06)",
+              color: selectedMajor ? "#fff" : "var(--ds-muted)",
+              borderRadius: 8, fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)",
+              cursor: selectedMajor ? "pointer" : "not-allowed",
+              boxShadow: selectedMajor ? "0 0 24px rgba(249,115,22,0.4)" : "none",
+              transition: "all 200ms",
+            }}
+          >
+            {saving ? (isAr ? "جارٍ الحفظ…" : "Saving…") : (isAr ? "ابدأ التخطيط ←" : "Start planning →")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
