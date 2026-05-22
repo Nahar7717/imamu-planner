@@ -117,11 +117,11 @@
 
 .dark {
   /* Dark mode — Composio: near-black canvas, brightness-step elevation, electric blue primary */
-  --background: oklch(0.055 0 0);
+  --background: oklch(0.16 0 0);
   --foreground: oklch(1 0 0);
-  --card: oklch(0.11 0 0);
+  --card: oklch(0.21 0 0);
   --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.11 0 0);
+  --popover: oklch(0.21 0 0);
   --popover-foreground: oklch(1 0 0);
   --primary: oklch(0.32 0.27 264);
   --primary-foreground: oklch(1 0 0);
@@ -157,10 +157,10 @@
   --sidebar-ring: oklch(0.43 0.29 264);
 
   /* Composio design tokens — available as var(--ds-*) */
-  --ds-canvas-deep: #000000;
-  --ds-surface-elevated: #222222;
-  --ds-line-soft: #1a1a1a;
-  --ds-line-strong: #333333;
+  --ds-canvas-deep: #111111;
+  --ds-surface-elevated: #2e2e2e;
+  --ds-line-soft: #2a2a2a;
+  --ds-line-strong: #3d3d3d;
   --ds-body: #a8a8a8;
   --ds-muted: #888888;
   --ds-muted-soft: #666666;
