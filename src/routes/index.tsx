@@ -17,6 +17,7 @@ import { CourseCard } from "@/components/CourseCard";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/hooks/useTheme";
 import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
@@ -33,6 +34,7 @@ const CAT_COLORS = ["#1a26ff", "#00d4ff", "#7b3aed", "#33d17a"] as const;
 function Dashboard() {
   const { user, loading, isVisitor, exitVisitorMode } = useAuth();
   const { lang, setLang, isRtl } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const s = t(lang);
   const qc = useQueryClient();
   const visitor = useVisitorProgress();
@@ -327,6 +329,18 @@ function Dashboard() {
               {isVisitor ? s.header.visitor : user?.email}
             </div>
           </div>
+          <button
+            onClick={toggleTheme}
+            style={{
+              padding: "6px 10px", cursor: "pointer",
+              background: "transparent", color: "var(--ds-body, #a8a8a8)",
+              border: "1px solid var(--ds-line-strong, #333)",
+              borderRadius: 8, fontSize: 13, flexShrink: 0,
+            }}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
           <button
             onClick={() => setLang(lang === "en" ? "ar" : "en")}
             style={{

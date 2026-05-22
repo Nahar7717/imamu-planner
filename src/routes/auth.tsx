@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useTheme } from "@/hooks/useTheme";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ function AuthPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, enterVisitorMode } = useAuth();
   const { lang, setLang } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const s = t(lang).auth;
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -90,6 +92,18 @@ function AuthPage() {
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--ds-muted)" }}>
             {s.subtitle}
           </div>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              padding: "2px 8px", cursor: "pointer",
+              background: "transparent", color: "var(--ds-muted)",
+              border: "1px solid var(--ds-line-strong, #333)",
+              borderRadius: 6, fontSize: 12,
+            }}
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
           <button
             type="button"
             onClick={() => setLang(lang === "en" ? "ar" : "en")}
