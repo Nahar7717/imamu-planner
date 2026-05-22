@@ -21,6 +21,7 @@ export type Prerequisite = { course_code: string; prereq_code: string };
 export type ElectiveGroup = {
   group_id: string;
   name: string;
+  name_ar: string | null;
   required_count: number;
   required_credits: number;
 };

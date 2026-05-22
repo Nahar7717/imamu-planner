@@ -590,7 +590,7 @@ function Dashboard() {
             {cat.uniG.map((g) =>
               g.group ? (
                 <div key={g.group.group_id}>
-                  <SubHeading label={g.group.name} sub={`${s.sections.pick} ${g.requiredCount} · ${g.doneCount} ${s.sections.chosen}`} />
+                  <SubHeading label={(lang === "ar" && g.group.name_ar) ? g.group.name_ar : g.group.name} sub={`${s.sections.pick} ${g.requiredCount} · ${g.doneCount} ${s.sections.chosen}`} />
                   <PickGroupCard required={g.requiredCount} done={g.doneCount} credits={`${Math.min(g.doneCredits, g.requiredCredits)} / ${g.requiredCredits} cr`} pct={g.requiredCredits > 0 ? Math.min(1, g.doneCredits / g.requiredCredits) : 0} color={CAT_COLORS[2]} />
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
                     {g.list.map(renderCard)}
