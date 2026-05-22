@@ -76,7 +76,7 @@ export const T = {
     tabs: {
       dashboard: "نظرة عامة",
       cs_core: "مقررات التخصص",
-      cs_elec: "اختيارات التخصص",
+      cs_elec: "متطلبات التخصص",
       uni: "متطلبات الجامعة",
     },
     header: {
