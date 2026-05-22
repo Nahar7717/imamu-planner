@@ -73,42 +73,39 @@ export function CourseCard({
       )}
 
 
-      {/* Top row: code · credits · badge */}
-      <div className="flex items-center gap-2">
-        <span
-          className="text-xs font-medium whitespace-nowrap"
-          style={{
-            fontFamily: "var(--font-mono)",
-            color: status === "completed" ? "#f97316" : "var(--ds-muted, #71717a)",
-            letterSpacing: "0.02em",
-          }}
-        >
-          {displayCode}
-        </span>
-        <span className="flex-1" />
-        <span
-          className="text-xs whitespace-nowrap"
-          style={{ fontFamily: "var(--font-mono)", color: "var(--ds-muted)" }}
-        >
-          {course.credits} cr
-        </span>
-        <StatusBadge status={status} capped={capped} strings={strings} />
-      </div>
-
-      {/* Course name */}
-      <div
-        className="mt-1 text-sm font-medium leading-snug"
-        style={{ color: status === "locked" ? "var(--ds-muted)" : "var(--color-foreground)" }}
-      >
-        {displayName}
+      {/* Single row: [code + name] | [cr + badge] */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 500,
+            color: status === "completed" ? "#f97316" : "#52525b",
+            letterSpacing: "0.02em", flexShrink: 0, minWidth: 52,
+          }}>
+            {displayCode}
+          </span>
+          <span style={{
+            fontSize: 13, fontWeight: 400,
+            color: status === "locked" || capped ? "#52525b" : "#e4e4e7",
+            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
+            {displayName}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <span style={{
+            fontFamily: "var(--font-mono)", fontSize: 10,
+            background: "rgba(255,255,255,0.05)", color: "#71717a",
+            padding: "2px 8px", borderRadius: 4,
+          }}>
+            {course.credits} cr
+          </span>
+          <StatusBadge status={status} capped={capped} strings={strings} />
+        </div>
       </div>
 
       {/* Missing prereqs hint */}
       {status === "locked" && missingPrereqs.length > 0 && (
-        <div
-          className="mt-1.5 text-xs"
-          style={{ fontFamily: "var(--font-mono)", color: "var(--ds-muted)" }}
-        >
+        <div style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "#52525b", marginTop: 4 }}>
           needs {missingPrereqs.slice(0, 2).join(", ")}
           {missingPrereqs.length > 2 ? ` +${missingPrereqs.length - 2}` : ""}
         </div>

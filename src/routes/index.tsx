@@ -394,7 +394,7 @@ function Dashboard() {
       </header>
 
       {/* ── MAIN CONTENT ── */}
-      <main style={{ maxWidth: 768, margin: "0 auto", padding: "16px 16px 96px" }}>
+      <main style={{ maxWidth: 840, margin: "0 auto", padding: "22px 20px 96px" }}>
 
         {/* Visitor banner */}
         {isVisitor && (
@@ -431,31 +431,26 @@ function Dashboard() {
             <div style={{
               background: "linear-gradient(135deg, #18181b 0%, #1c1017 50%, #1a1018 100%)",
               border: "1px solid rgba(249,115,22,0.15)",
-              borderRadius: 16, padding: 20, overflow: "hidden", position: "relative",
+              borderRadius: 16, padding: "22px 24px", overflow: "hidden", position: "relative",
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                <ProgressRing value={overallPct} size={108} stroke={8} label={`${Math.round(overallPct * 100)}%`} sub={s.dashboard.degree_sub} />
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: "var(--ds-muted)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "var(--color-foreground)", marginBottom: 3 }}>
                     {s.dashboard.degree}
                   </div>
-                  <div style={{ fontSize: 28, fontWeight: 500, color: "var(--color-foreground)", letterSpacing: "-0.03em", marginTop: 2, lineHeight: 1 }}>
-                    {overallDone}
-                    <span style={{ color: "var(--ds-muted, #888)", fontSize: 18, marginLeft: 4 }}>/ {overallTotal}</span>
+                  <div style={{ fontSize: 12, color: "#71717a", marginBottom: 14 }}>
+                    {overallDone} {lang === "ar" ? "من" : "of"} {overallTotal} {s.dashboard.creditsEarned}
                   </div>
-                  <div style={{ fontSize: 12, color: "var(--ds-body, #a8a8a8)", marginTop: 4 }}>{s.dashboard.creditsEarned}</div>
-                  <div style={{ marginTop: 12 }}>
-                    <StackedBar
-                      segments={[
-                        { value: overallTotal > 0 ? cat.csCore.doneCredits / overallTotal : 0, color: CAT_COLORS[0] },
-                        { value: overallTotal > 0 ? Math.min(cat.csElec.doneCredits, cat.csElec.requiredCredits) / overallTotal : 0, color: CAT_COLORS[1] },
-                        { value: overallTotal > 0 ? cat.uniReq.done / overallTotal : 0, color: CAT_COLORS[2] },
-                        { value: overallTotal > 0 ? Math.min(cat.free.doneCredits, cat.free.requiredCredits) / overallTotal : 0, color: CAT_COLORS[3] },
-                        { value: overallTotal > 0 ? (overallTotal - overallDone) / overallTotal : 1, color: "var(--ds-line-strong, #333)" },
-                      ]}
-                    />
+                  <div style={{ height: 6, background: "rgba(255,255,255,0.07)", borderRadius: 99, overflow: "hidden", marginBottom: 5 }}>
+                    <div style={{ width: `${Math.min(100, Math.round(overallPct * 100))}%`, height: "100%", background: "linear-gradient(90deg, #f97316, #ec4899)", borderRadius: 99, transition: "width 600ms cubic-bezier(0.4,0,0.2,1)" }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: "#52525b" }}>
+                    {overallDone >= overallTotal
+                      ? s.dashboard.degreeComplete
+                      : `${s.dashboard.onTrack} · ${s.dashboard.semestersRemain(Math.ceil((overallTotal - overallDone) / 15))}`}
                   </div>
                 </div>
+                <ProgressRing value={overallPct} size={76} stroke={7} label={`${Math.round(overallPct * 100)}%`} sub={s.dashboard.degree_sub} />
               </div>
             </div>
 
@@ -487,49 +482,18 @@ function Dashboard() {
               ))}
             </div>
 
-            {/* Graduation estimate */}
-            <div style={{
-              padding: "12px 14px",
-              background: "var(--color-card)",
-              border: "1px solid var(--ds-line-soft, #1a1a1a)",
-              borderRadius: 12,
-              display: "flex", alignItems: "center", gap: 10,
-            }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(249,115,22,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f97316", flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: "var(--color-foreground)" }}>
-                  {overallDone >= overallTotal ? s.dashboard.degreeComplete : s.dashboard.onTrack}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--ds-muted, #888)" }}>
-                  {overallDone >= overallTotal
-                    ? s.dashboard.allDone
-                    : s.dashboard.semestersRemain(Math.ceil((overallTotal - overallDone) / 15))}
-                </div>
-              </div>
-            </div>
-
             {/* What to take next */}
             {suggested.length > 0 && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: "var(--ds-muted)", letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 600 }}>{s.dashboard.whatNext}</div>
-                    <div style={{ fontSize: 16, fontWeight: 500, color: "var(--color-foreground)", marginTop: 2 }}>{s.dashboard.unlocked}</div>
-                  </div>
-                  <div style={{
-                    fontSize: 10, padding: "3px 10px", borderRadius: 999,
-                    background: "rgba(249,115,22,0.1)",
-                    color: "#f97316", fontFamily: "var(--font-mono)",
-                    border: "1px solid rgba(249,115,22,0.2)",
-                  }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#71717a" }}>
+                    {s.dashboard.whatNext} — {s.dashboard.unlocked}
+                  </span>
+                  <span style={{ fontSize: 10, background: "rgba(249,115,22,0.1)", color: "#fb923c", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 99, padding: "2px 10px", fontWeight: 600 }}>
                     {suggested.length} {s.dashboard.open}
-                  </div>
+                  </span>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                   {suggested.map(renderCard)}
                 </div>
               </div>
@@ -566,7 +530,7 @@ function Dashboard() {
                       <MiniBar value={totalCr > 0 ? doneCr / totalCr : 0} />
                     </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                     {list.map(renderCard)}
                   </div>
                 </div>
@@ -605,7 +569,7 @@ function Dashboard() {
                 <div key={g.group.group_id}>
                   <SubHeading label={(lang === "ar" && g.group.name_ar) ? g.group.name_ar : g.group.name} sub={`${s.sections.pick} ${g.requiredCount} · ${g.doneCount} ${s.sections.chosen}`} />
                   <PickGroupCard required={g.requiredCount} done={g.doneCount} credits={`${Math.min(g.doneCredits, g.requiredCredits)} / ${g.requiredCredits} cr`} pct={g.requiredCredits > 0 ? Math.min(1, g.doneCredits / g.requiredCredits) : 0} color={CAT_COLORS[2]} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
                     {g.list.map(renderCard)}
                   </div>
                 </div>
@@ -618,7 +582,7 @@ function Dashboard() {
               <div style={{ marginTop: 12 }}>
                 <PickGroupCard required={cat.free.requiredCount} done={cat.free.doneCount} credits={`${Math.min(cat.free.doneCredits, cat.free.requiredCredits)} / ${cat.free.requiredCredits} cr`} pct={cat.free.requiredCredits > 0 ? Math.min(1, cat.free.doneCredits / cat.free.requiredCredits) : 0} color={CAT_COLORS[3]} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 8 }}>
                 {cat.free.list.map(renderCard)}
               </div>
             </div>
