@@ -9,6 +9,7 @@ export function CourseCard({
   status,
   onToggle,
   missingPrereqs = [],
+  allPrereqs = [],
   recentlyUnlocked = false,
   capped = false,
 }: {
@@ -16,6 +17,7 @@ export function CourseCard({
   status: CourseStatus;
   onToggle: () => void;
   missingPrereqs?: string[];
+  allPrereqs?: string[];
   recentlyUnlocked?: boolean;
   capped?: boolean;
 }) {
@@ -94,8 +96,8 @@ export function CourseCard({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           {/* Prereq tooltip — only on locked courses with missing prereqs */}
-          {missingPrereqs.length > 0 && (
-            <PrereqTooltip prereqs={missingPrereqs} lang={lang} />
+          {allPrereqs.length > 0 && (
+            <PrereqTooltip prereqs={allPrereqs} missingPrereqs={missingPrereqs} lang={lang} />
           )}
           <span style={{
             fontFamily: "var(--font-mono)", fontSize: 10,
@@ -113,9 +115,10 @@ export function CourseCard({
 
 // ── Prereq tooltip ──────────────────────────────────────────────────────────
 
-function PrereqTooltip({ prereqs, lang }: { prereqs: string[]; lang: string }) {
+function PrereqTooltip({ prereqs, missingPrereqs, lang }: { prereqs: string[]; missingPrereqs: string[]; lang: string }) {
   const [visible, setVisible] = useState(false);
   const label = lang === "ar" ? "المتطلبات السابقة" : "Prerequisites";
+  const missingSet = new Set(missingPrereqs);
 
   return (
     <div
@@ -172,17 +175,24 @@ function PrereqTooltip({ prereqs, lang }: { prereqs: string[]; lang: string }) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {prereqs.map((code) => (
-              <div key={code} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(234,179,8,0.5)", flexShrink: 0 }} />
-                <span style={{
-                  fontSize: 11, fontFamily: "var(--font-mono)",
-                  color: "#e4e4e7", fontWeight: 500,
-                }}>
-                  {code}
-                </span>
-              </div>
-            ))}
+            {prereqs.map((code) => {
+              const missing = missingSet.has(code);
+              return (
+                <div key={code} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{
+                    width: 5, height: 5, borderRadius: "50%", flexShrink: 0,
+                    background: missing ? "rgba(234,179,8,0.5)" : "rgba(34,197,94,0.5)",
+                  }} />
+                  <span style={{
+                    fontSize: 11, fontFamily: "var(--font-mono)", fontWeight: 500,
+                    color: missing ? "#e4e4e7" : "#71717a",
+                    textDecoration: missing ? "none" : "line-through",
+                  }}>
+                    {code}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

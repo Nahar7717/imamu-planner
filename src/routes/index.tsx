@@ -173,6 +173,14 @@ function Dashboard() {
     [prerequisites, completedCodes],
   );
 
+  const getAllPrereqs = useCallback(
+    (course: Course) =>
+      prerequisites
+        .filter((p) => p.course_code === course.code)
+        .map((p) => p.prereq_code),
+    [prerequisites],
+  );
+
   // Credit cap: an available course is capped when its group's required credits are already met
   const isCourseCapped = useCallback(
     (course: Course) => {
@@ -288,6 +296,7 @@ function Dashboard() {
       status={getCourseStatus(c, completedCodes, prerequisites)}
       onToggle={() => toggle.mutate(c)}
       missingPrereqs={getMissingPrereqs(c)}
+      allPrereqs={getAllPrereqs(c)}
       recentlyUnlocked={recentUnlocks.has(c.code)}
       capped={isCourseCapped(c)}
     />
