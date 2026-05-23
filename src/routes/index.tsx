@@ -107,11 +107,11 @@ function Dashboard() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.from("profiles") as any)
-        .select("major_id")
+        .select("major_id, is_admin")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { major_id: string | null };
+      return data as { major_id: string | null; is_admin: boolean };
     },
   });
 
@@ -410,6 +410,22 @@ function Dashboard() {
           >
             {lang === "en" ? "ع" : "EN"}
           </button>
+          {profile?.is_admin && (
+            <a
+              href="/admin"
+              style={{
+                padding: "6px 10px", cursor: "pointer",
+                background: "transparent", color: "var(--ds-body, #a8a8a8)",
+                border: "1px solid var(--ds-line-strong, #333)",
+                borderRadius: 8, fontSize: 11, fontFamily: "var(--font-sans)", fontWeight: 500,
+                display: "flex", alignItems: "center", gap: 4, flexShrink: 0,
+                textDecoration: "none",
+              }}
+              title="Admin Panel"
+            >
+              ⚙️ Admin
+            </a>
+          )}
           <button
             onClick={signOut}
             style={{

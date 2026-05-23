@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      colleges: {
+        Row: {
+          id: string
+          name: string
+          name_ar: string | null
+        }
+        Insert: {
+          id: string
+          name: string
+          name_ar?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          name_ar?: string | null
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           code: string
@@ -21,6 +39,7 @@ export type Database = {
           course_type: string
           credits: number
           level_num: number | null
+          major_id: string | null
           name: string
           name_ar: string | null
           notes: string | null
@@ -31,6 +50,7 @@ export type Database = {
           course_type: string
           credits: number
           level_num?: number | null
+          major_id?: string | null
           name: string
           name_ar?: string | null
           notes?: string | null
@@ -41,11 +61,20 @@ export type Database = {
           course_type?: string
           credits?: number
           level_num?: number | null
+          major_id?: string | null
           name?: string
           name_ar?: string | null
           notes?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "courses_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       elective_group_courses: {
         Row: {
@@ -80,6 +109,7 @@ export type Database = {
       elective_groups: {
         Row: {
           group_id: string
+          major_id: string | null
           name: string
           name_ar: string | null
           required_count: number
@@ -87,6 +117,7 @@ export type Database = {
         }
         Insert: {
           group_id: string
+          major_id?: string | null
           name: string
           name_ar?: string | null
           required_count: number
@@ -94,12 +125,53 @@ export type Database = {
         }
         Update: {
           group_id?: string
+          major_id?: string | null
           name?: string
           name_ar?: string | null
           required_count?: number
           required_credits?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "elective_groups_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      majors: {
+        Row: {
+          college_id: string | null
+          id: string
+          name: string
+          name_ar: string | null
+          total_credits: number
+        }
+        Insert: {
+          college_id?: string | null
+          id: string
+          name: string
+          name_ar?: string | null
+          total_credits?: number
+        }
+        Update: {
+          college_id?: string | null
+          id?: string
+          name?: string
+          name_ar?: string | null
+          total_credits?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "majors_college_id_fkey"
+            columns: ["college_id"]
+            isOneToOne: false
+            referencedRelation: "colleges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prerequisites: {
         Row: {
@@ -138,6 +210,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          is_admin: boolean
+          major_id: string | null
           student_id: string | null
         }
         Insert: {
@@ -146,6 +220,8 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          is_admin?: boolean
+          major_id?: string | null
           student_id?: string | null
         }
         Update: {
@@ -154,9 +230,19 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          is_admin?: boolean
+          major_id?: string | null
           student_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_progress: {
         Row: {
@@ -208,7 +294,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin_user: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

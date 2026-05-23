@@ -21,13 +21,14 @@ function AuthPage() {
   const { lang, setLang } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const s = t(lang).auth;
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [selectedCollege, setSelectedCollege] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const { data: colleges = [] } = useQuery({
     queryKey: ["colleges"],
@@ -56,6 +57,27 @@ function AuthPage() {
   const continueAsVisitor = () => {
     enterVisitorMode();
     navigate({ to: "/" });
+  };
+
+  const submitForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+      setErr(s.domainErr(ALLOWED_DOMAIN));
+      return;
+    }
+    setErr("");
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+    } catch (err: unknown) {
+      setErr(err instanceof Error ? err.message : s.authFailed);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -166,26 +188,73 @@ function AuthPage() {
         padding: 20,
       }}>
         {/* Sign in / Sign up toggle */}
-        <div style={{ display: "flex", padding: 3, background: "var(--ds-canvas-deep, #000)", borderRadius: 8, marginBottom: 16 }}>
-          {(["signin", "signup"] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setMode(k)}
-              style={{
-                flex: 1, padding: "8px 0", border: "none", cursor: "pointer",
-                background: mode === k ? "var(--ds-surface-elevated, #222)" : "transparent",
-                color: mode === k ? "var(--color-foreground)" : "var(--ds-muted)",
-                borderRadius: 6,
-                fontSize: 13, fontWeight: 500, fontFamily: "var(--font-sans)",
-                transition: "all 150ms",
-              }}
-            >
-              {k === "signin" ? s.signIn : s.signUp}
-            </button>
-          ))}
-        </div>
+        {mode !== "forgot" && (
+          <div style={{ display: "flex", padding: 3, background: "var(--ds-canvas-deep, #000)", borderRadius: 8, marginBottom: 16 }}>
+            {(["signin", "signup"] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => { setMode(k); setErr(""); }}
+                style={{
+                  flex: 1, padding: "8px 0", border: "none", cursor: "pointer",
+                  background: mode === k ? "var(--ds-surface-elevated, #222)" : "transparent",
+                  color: mode === k ? "var(--color-foreground)" : "var(--ds-muted)",
+                  borderRadius: 6,
+                  fontSize: 13, fontWeight: 500, fontFamily: "var(--font-sans)",
+                  transition: "all 150ms",
+                }}
+              >
+                {k === "signin" ? s.signIn : s.signUp}
+              </button>
+            ))}
+          </div>
+        )}
 
+        {/* Forgot password form */}
+        {mode === "forgot" && (
+          <div>
+            <button
+              type="button"
+              onClick={() => { setMode("signin"); setErr(""); setResetSent(false); }}
+              style={{ background: "none", border: "none", color: "var(--ds-muted)", cursor: "pointer", fontSize: 12, padding: "0 0 12px", display: "flex", alignItems: "center", gap: 4 }}
+            >
+              ← {lang === "ar" ? "رجوع" : "Back"}
+            </button>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "var(--color-foreground)", marginBottom: 12 }}>
+              {lang === "ar" ? "استعادة كلمة المرور" : "Reset Password"}
+            </div>
+            {resetSent ? (
+              <div style={{ fontSize: 13, color: "#4ade80", padding: "10px 0", lineHeight: 1.6 }}>
+                {lang === "ar"
+                  ? "تم إرسال رابط الاسترداد إلى بريدك الإلكتروني."
+                  : "A reset link has been sent to your email."}
+              </div>
+            ) : (
+              <form onSubmit={submitForgot} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <FieldInput label={s.emailLabel} type="email" value={email} onChange={setEmail} placeholder={`yourname${ALLOWED_DOMAIN}`} />
+                {err && <div style={{ fontSize: 12, color: "#ff4d4d", padding: "4px 0" }}>{err}</div>}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    marginTop: 4,
+                    padding: "12px 16px", border: "none", cursor: loading ? "not-allowed" : "pointer",
+                    background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff",
+                    borderRadius: 8, fontSize: 14, fontWeight: 500,
+                    fontFamily: "var(--font-sans)",
+                    boxShadow: "0 0 24px rgba(249,115,22,0.4)",
+                    opacity: loading ? 0.7 : 1,
+                  }}
+                >
+                  {loading ? s.waiting : (lang === "ar" ? "إرسال رابط الاسترداد" : "Send Reset Link")}
+                </button>
+              </form>
+            )}
+          </div>
+        )}
+
+        {/* Sign in / Sign up form */}
+        {mode !== "forgot" && (
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <FieldInput label={s.emailLabel} type="email" value={email} onChange={setEmail} placeholder={`yourname${ALLOWED_DOMAIN}`} />
           <FieldInput label={s.passwordLabel} type="password" value={password} onChange={setPassword} placeholder="••••••••" />
@@ -227,7 +296,20 @@ function AuthPage() {
           >
             {loading ? s.waiting : mode === "signin" ? s.signInBtn : s.signUpBtn}
           </button>
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={() => { setMode("forgot"); setErr(""); }}
+              style={{
+                background: "none", border: "none", color: "var(--ds-muted)", cursor: "pointer",
+                fontSize: 11, textAlign: "center", padding: "2px 0", fontFamily: "var(--font-sans)",
+              }}
+            >
+              {lang === "ar" ? "نسيت كلمة المرور؟" : "Forgot password?"}
+            </button>
+          )}
         </form>
+        )}
 
         <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
           <div style={{ flex: 1, height: 1, background: "var(--ds-line-strong, #333)" }} />
