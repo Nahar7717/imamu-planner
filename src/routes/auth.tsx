@@ -24,11 +24,13 @@ function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup" | "forgot">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [selectedCollege, setSelectedCollege] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
 
   const { data: colleges = [] } = useQuery({
     queryKey: ["colleges"],
@@ -50,9 +52,19 @@ function AuthPage() {
     ? majors.filter((m) => m.college_id === selectedCollege)
     : majors;
 
+  // Listen for PASSWORD_RECOVERY event from the reset email link
   useEffect(() => {
-    if (!authLoading && user) navigate({ to: "/" });
-  }, [authLoading, user, navigate]);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsRecovery(true);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && user && !isRecovery) navigate({ to: "/" });
+  }, [authLoading, user, isRecovery, navigate]);
 
   const continueAsVisitor = () => {
     enterVisitorMode();
@@ -73,6 +85,24 @@ function AuthPage() {
       });
       if (error) throw error;
       setResetSent(true);
+    } catch (err: unknown) {
+      setErr(err instanceof Error ? err.message : s.authFailed);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) { setErr(s.passwordErr); return; }
+    setErr("");
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast.success(lang === "ar" ? "تم تغيير كلمة المرور بنجاح!" : "Password updated successfully!");
+      setIsRecovery(false);
+      navigate({ to: "/" });
     } catch (err: unknown) {
       setErr(err instanceof Error ? err.message : s.authFailed);
     } finally {
@@ -187,6 +217,44 @@ function AuthPage() {
         borderRadius: 16,
         padding: 20,
       }}>
+
+        {/* ── Set new password (recovery mode) ── */}
+        {isRecovery ? (
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-foreground)", marginBottom: 4 }}>
+              {lang === "ar" ? "تعيين كلمة مرور جديدة" : "Set New Password"}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--ds-muted)", marginBottom: 16 }}>
+              {lang === "ar" ? "أدخل كلمة المرور الجديدة أدناه." : "Enter your new password below."}
+            </div>
+            <form onSubmit={submitNewPassword} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <FieldInput
+                label={lang === "ar" ? "كلمة المرور الجديدة" : "New Password"}
+                type="password"
+                value={newPassword}
+                onChange={setNewPassword}
+                placeholder="••••••••"
+              />
+              {err && <div style={{ fontSize: 12, color: "#ff4d4d", padding: "4px 0" }}>{err}</div>}
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  marginTop: 4,
+                  padding: "12px 16px", border: "none", cursor: loading ? "not-allowed" : "pointer",
+                  background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff",
+                  borderRadius: 8, fontSize: 14, fontWeight: 500,
+                  fontFamily: "var(--font-sans)",
+                  boxShadow: "0 0 24px rgba(249,115,22,0.4)",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? s.waiting : (lang === "ar" ? "حفظ كلمة المرور" : "Save Password")}
+              </button>
+            </form>
+          </div>
+        ) : (
+          <>
         {/* Sign in / Sign up toggle */}
         {mode !== "forgot" && (
           <div style={{ display: "flex", padding: 3, background: "var(--ds-canvas-deep, #000)", borderRadius: 8, marginBottom: 16 }}>
@@ -333,6 +401,8 @@ function AuthPage() {
         <div style={{ fontSize: 11, color: "var(--ds-muted-soft, #666)", textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
           {s.visitorNote}
         </div>
+          </>
+        )}
       </div>
 
       <div style={{ marginTop: 24, fontSize: 11, color: "var(--ds-muted-soft, #666)", fontFamily: "var(--font-mono)" }}>
