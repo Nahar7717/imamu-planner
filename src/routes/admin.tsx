@@ -24,7 +24,7 @@ const BTN: React.CSSProperties = {
 function AdminPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"stats" | "courses" | "majors" | "users">("stats");
+  const [tab, setTab] = useState<"stats" | "courses" | "majors" | "users" | "import">("stats");
 
   const { data: profile } = useQuery({
     queryKey: ["admin-profile", user?.id],
@@ -51,6 +51,7 @@ function AdminPage() {
     { key: "courses", label: "Courses" },
     { key: "majors",  label: "Colleges & Majors" },
     { key: "users",   label: "Users" },
+    { key: "import",  label: "Bulk Import" },
   ] as const;
 
   return (
@@ -91,6 +92,7 @@ function AdminPage() {
         {tab === "courses" && <CoursesTab />}
         {tab === "majors"  && <MajorsTab />}
         {tab === "users"   && <UsersTab />}
+        {tab === "import"  && <ImportTab />}
       </main>
     </div>
   );
@@ -506,6 +508,229 @@ function UsersTab() {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── Bulk Import ───────────────────────────────────────────────────────────────
+
+const EXAMPLE_JSON = JSON.stringify({
+  major_id: "cs",
+  courses: [
+    {
+      code: "CS499",
+      code_ar: "ح ح 499",
+      name: "Example Course",
+      name_ar: "مقرر مثال",
+      course_type: "cs_core",
+      credits: 3,
+      level_num: 8,
+      notes: null,
+      prerequisites: ["CS301"],
+    },
+  ],
+}, null, 2);
+
+type ImportCourse = {
+  code: string;
+  code_ar?: string | null;
+  name: string;
+  name_ar?: string | null;
+  course_type: string;
+  credits: number;
+  level_num?: number | null;
+  notes?: string | null;
+  prerequisites?: string[];
+};
+
+function ImportTab() {
+  const qc = useQueryClient();
+  const [json, setJson] = useState("");
+  const [preview, setPreview] = useState<{ courses: ImportCourse[]; major_id: string } | null>(null);
+  const [parseErr, setParseErr] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [result, setResult] = useState<{ inserted: number; prereqs: number; skipped: string[] } | null>(null);
+
+  const parse = () => {
+    setParseErr("");
+    setPreview(null);
+    setResult(null);
+    try {
+      const obj = JSON.parse(json);
+      if (!obj.major_id || typeof obj.major_id !== "string") throw new Error("Missing or invalid 'major_id'");
+      if (!Array.isArray(obj.courses) || obj.courses.length === 0) throw new Error("'courses' must be a non-empty array");
+      for (const c of obj.courses) {
+        if (!c.code || !c.name || !c.course_type || typeof c.credits !== "number") {
+          throw new Error(`Course missing required fields: code, name, course_type, credits. Got: ${JSON.stringify(c)}`);
+        }
+      }
+      setPreview({ major_id: obj.major_id, courses: obj.courses });
+    } catch (e) {
+      setParseErr(e instanceof Error ? e.message : "Invalid JSON");
+    }
+  };
+
+  const runImport = async () => {
+    if (!preview) return;
+    setImporting(true);
+    setResult(null);
+    const skipped: string[] = [];
+    let inserted = 0;
+    let prereqCount = 0;
+
+    try {
+      for (const c of preview.courses) {
+        const { error } = await (supabase.from("courses") as any).upsert({
+          code: c.code,
+          code_ar: c.code_ar ?? null,
+          name: c.name,
+          name_ar: c.name_ar ?? null,
+          course_type: c.course_type,
+          credits: c.credits,
+          level_num: c.level_num ?? null,
+          major_id: preview.major_id,
+          notes: c.notes ?? null,
+        }, { onConflict: "code" });
+
+        if (error) { skipped.push(`${c.code}: ${error.message}`); continue; }
+        inserted++;
+
+        // Insert prerequisites
+        if (c.prerequisites && c.prerequisites.length > 0) {
+          for (const prereq of c.prerequisites) {
+            const { error: pe } = await supabase.from("prerequisites").upsert(
+              { course_code: c.code, prereq_code: prereq },
+              { onConflict: "course_code,prereq_code" },
+            );
+            if (!pe) prereqCount++;
+          }
+        }
+      }
+
+      setResult({ inserted, prereqs: prereqCount, skipped });
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      toast.success(`Imported ${inserted} courses, ${prereqCount} prerequisite links`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div>
+        <SectionTitle>Bulk Course Import</SectionTitle>
+        <p style={{ fontSize: 13, color: "var(--ds-muted)", marginTop: 6, lineHeight: 1.6 }}>
+          Paste a JSON object to insert or upsert multiple courses at once, including their prerequisites.
+          Existing courses with the same code will be updated.
+        </p>
+      </div>
+
+      {/* Example format */}
+      <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 16 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: "var(--ds-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
+          Expected Format
+        </div>
+        <pre style={{ fontSize: 11, color: "#a8a8a8", fontFamily: "var(--font-mono)", margin: 0, whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
+          {EXAMPLE_JSON}
+        </pre>
+        <div style={{ marginTop: 10, fontSize: 11, color: "var(--ds-muted)", lineHeight: 1.6 }}>
+          <b style={{ color: "#f97316" }}>course_type</b> values: <code>cs_core</code>, <code>cs_elec</code>, <code>uni_mandatory</code>, <code>free_elec</code><br />
+          <b style={{ color: "#f97316" }}>prerequisites</b>: array of existing course codes (optional)
+        </div>
+        <button
+          onClick={() => setJson(EXAMPLE_JSON)}
+          style={{ ...BTN, marginTop: 10, background: "rgba(255,255,255,0.06)", color: "var(--ds-muted)" }}
+        >
+          Load Example
+        </button>
+      </div>
+
+      {/* JSON input */}
+      <FormField label="JSON Input">
+        <textarea
+          value={json}
+          onChange={(e) => { setJson(e.target.value); setParseErr(""); setPreview(null); setResult(null); }}
+          rows={14}
+          placeholder='{ "major_id": "cs", "courses": [...] }'
+          style={{ ...inputStyle, resize: "vertical", lineHeight: 1.5, fontFamily: "var(--font-mono)", fontSize: 12 }}
+        />
+      </FormField>
+
+      {parseErr && (
+        <div style={{ fontSize: 12, color: "#ff4d4d", background: "rgba(255,77,77,0.08)", border: "1px solid rgba(255,77,77,0.2)", borderRadius: 8, padding: "10px 14px" }}>
+          ⚠ {parseErr}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={parse} style={{ ...BTN, background: "rgba(255,255,255,0.08)", color: "var(--color-foreground)", padding: "8px 18px" }}>
+          Preview
+        </button>
+        {preview && (
+          <button
+            onClick={runImport}
+            disabled={importing}
+            style={{ ...BTN, background: GRAD, color: "#fff", padding: "8px 18px", opacity: importing ? 0.7 : 1 }}
+          >
+            {importing ? "Importing…" : `Import ${preview.courses.length} courses`}
+          </button>
+        )}
+      </div>
+
+      {/* Preview table */}
+      {preview && !result && (
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-foreground)", marginBottom: 10 }}>
+            Preview — {preview.courses.length} courses for major <code style={{ color: "#f97316" }}>{preview.major_id}</code>
+          </div>
+          <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.04)", textAlign: "left" }}>
+                  {["Code", "Name", "Type", "Cr", "Lvl", "Prereqs"].map((h) => (
+                    <th key={h} style={{ padding: "8px 12px", fontWeight: 600, color: "var(--ds-muted)", fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {preview.courses.map((c, i) => (
+                  <tr key={c.code} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                    <td style={{ padding: "7px 12px", fontFamily: "var(--font-mono)", color: "#f97316" }}>{c.code}</td>
+                    <td style={{ padding: "7px 12px", color: "var(--color-foreground)" }}>{c.name}</td>
+                    <td style={{ padding: "7px 12px", color: "var(--ds-muted)" }}>{c.course_type}</td>
+                    <td style={{ padding: "7px 12px", color: "var(--ds-muted)" }}>{c.credits}</td>
+                    <td style={{ padding: "7px 12px", color: "var(--ds-muted)" }}>{c.level_num ?? "—"}</td>
+                    <td style={{ padding: "7px 12px", color: "var(--ds-muted)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                      {c.prerequisites?.join(", ") || "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Result */}
+      {result && (
+        <div style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#4ade80", marginBottom: 8 }}>
+            ✓ Import complete
+          </div>
+          <div style={{ fontSize: 13, color: "var(--ds-body)", lineHeight: 1.8 }}>
+            {result.inserted} courses inserted/updated<br />
+            {result.prereqs} prerequisite links added
+          </div>
+          {result.skipped.length > 0 && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#ff4d4d" }}>
+              <b>Skipped:</b><br />
+              {result.skipped.map((s, i) => <div key={i}>{s}</div>)}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

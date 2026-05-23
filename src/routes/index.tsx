@@ -41,6 +41,9 @@ function Dashboard() {
   const visitor = useVisitorProgress();
   const [tab, setTab] = useState<TabKey>("dashboard");
   const [recentUnlocks, setRecentUnlocks] = useState(new Set<string>());
+  const [pendingCourse, setPendingCourse] = useState<Course | null>(null);
+  const [pendingGrade, setPendingGrade] = useState("");
+  const [pendingSemester, setPendingSemester] = useState("");
 
   const TABS = TAB_KEYS.map((key) => ({ key, label: s.tabs[key] }));
 
@@ -98,7 +101,7 @@ function Dashboard() {
         .select("*")
         .eq("student_id", user!.id);
       if (error) throw error;
-      return data as { course_code: string; status: string }[];
+      return data as { course_code: string; status: string; grade: string | null; semester_taken: string | null }[];
     },
   });
 
@@ -107,11 +110,11 @@ function Dashboard() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.from("profiles") as any)
-        .select("major_id, is_admin")
+        .select("major_id, is_admin, full_name")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { major_id: string | null; is_admin: boolean };
+      return data as { major_id: string | null; is_admin: boolean; full_name: string | null };
     },
   });
 
@@ -146,11 +149,11 @@ function Dashboard() {
   );
 
   const toggle = useMutation({
-    mutationFn: async (course: Course) => {
+    mutationFn: async ({ course, grade, semester }: { course: Course; grade?: string | null; semester?: string | null }) => {
       if (isVisitor) {
         const was = visitor.completedCodes.has(course.code);
         visitor.toggle(course.code);
-        return { unmarked: was };
+        return { unmarked: was, course };
       }
       if (!user) throw new Error("Not authenticated");
       if (completedCodes.has(course.code)) {
@@ -160,20 +163,26 @@ function Dashboard() {
           .eq("student_id", user.id)
           .eq("course_code", course.code);
         if (error) throw error;
-        return { unmarked: true };
+        return { unmarked: true, course };
       } else {
         const { error } = await supabase.from("student_progress").upsert(
-          { student_id: user.id, course_code: course.code, status: "completed" },
+          {
+            student_id: user.id,
+            course_code: course.code,
+            status: "completed",
+            grade: grade || null,
+            semester_taken: semester || null,
+          },
           { onConflict: "student_id,course_code" },
         );
         if (error) throw error;
-        return { unmarked: false };
+        return { unmarked: false, course };
       }
     },
-    onSuccess: (r, course) => {
+    onSuccess: ({ unmarked, course }) => {
       qc.invalidateQueries({ queryKey: ["progress", user?.id] });
-      toast.success(r.unmarked ? `${lang === "ar" ? "تم إلغاء" : "Unmarked"} ${course.code}` : `${lang === "ar" ? "اكتمل" : "Completed"} ${course.code}`);
-      if (!r.unmarked) {
+      toast.success(unmarked ? `${lang === "ar" ? "تم إلغاء" : "Unmarked"} ${course.code}` : `${lang === "ar" ? "اكتمل" : "Completed"} ${course.code}`);
+      if (!unmarked) {
         // Find newly unlocked courses
         const newCompleted = new Set(completedCodes);
         newCompleted.add(course.code);
@@ -200,6 +209,47 @@ function Dashboard() {
     for (const c of courses) m.set(c.code, c);
     return m;
   }, [courses]);
+
+  // Map from course_code → full progress entry (for grade/semester display)
+  const progressMap = useMemo(() => {
+    const m = new Map<string, { course_code: string; status: string; grade: string | null; semester_taken: string | null }>();
+    for (const p of progress) m.set(p.course_code, p);
+    return m;
+  }, [progress]);
+
+  // GPA calculation — Saudi 5-point scale
+  const GPA_POINTS: Record<string, number> = { A: 5.0, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 0.0 };
+  const { gpa, gradedCount, gradedCredits } = useMemo(() => {
+    if (isVisitor) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
+    let totalPoints = 0, totalCredits = 0, count = 0;
+    for (const entry of progress) {
+      if (entry.status === "completed" && entry.grade && GPA_POINTS[entry.grade] !== undefined) {
+        const course = coursesByCode.get(entry.course_code);
+        if (course) {
+          totalPoints += GPA_POINTS[entry.grade] * course.credits;
+          totalCredits += course.credits;
+          count++;
+        }
+      }
+    }
+    if (totalCredits === 0) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
+    return { gpa: totalPoints / totalCredits, gradedCount: count, gradedCredits: totalCredits };
+  }, [progress, coursesByCode, isVisitor]);
+
+  // Semester options — First/Second/Summer from 2018 to next year
+  const semesterOptions = useMemo(() => {
+    const opts: { value: string; label: string }[] = [];
+    const currentYear = new Date().getFullYear();
+    for (let y = currentYear + 1; y >= 2018; y--) {
+      const ay = `${y}-${y + 1}`;
+      opts.push(
+        { value: `Summer-${y}`, label: lang === "ar" ? `صيف ${y}` : `Summer ${y}` },
+        { value: `Second-${ay}`, label: lang === "ar" ? `الفصل الثاني ${ay}` : `Second Semester ${ay}` },
+        { value: `First-${ay}`, label: lang === "ar" ? `الفصل الأول ${ay}` : `First Semester ${ay}` },
+      );
+    }
+    return opts;
+  }, [lang]);
 
   const getMissingPrereqs = useCallback(
     (course: Course) =>
@@ -337,18 +387,34 @@ function Dashboard() {
     return <MajorPicker userId={user.id} lang={lang} />;
   }
 
-  const renderCard = (c: Course) => (
-    <CourseCard
-      key={c.code}
-      course={c}
-      status={getCourseStatus(c, completedCodes, prerequisites)}
-      onToggle={() => toggle.mutate(c)}
-      missingPrereqs={getMissingPrereqs(c)}
-      allPrereqs={getAllPrereqs(c)}
-      recentlyUnlocked={recentUnlocks.has(c.code)}
-      capped={isCourseCapped(c)}
-    />
-  );
+  const renderCard = (c: Course) => {
+    const status = getCourseStatus(c, completedCodes, prerequisites);
+    const entry = progressMap.get(c.code);
+    return (
+      <CourseCard
+        key={c.code}
+        course={c}
+        status={status}
+        onToggle={() => {
+          if (completedCodes.has(c.code)) {
+            // Unmark directly — no modal needed
+            toggle.mutate({ course: c });
+          } else {
+            // Open modal to optionally capture grade + semester
+            setPendingCourse(c);
+            setPendingGrade("");
+            setPendingSemester("");
+          }
+        }}
+        grade={entry?.grade ?? null}
+        semester={entry?.semester_taken ?? null}
+        missingPrereqs={getMissingPrereqs(c)}
+        allPrereqs={getAllPrereqs(c)}
+        recentlyUnlocked={recentUnlocks.has(c.code)}
+        capped={isCourseCapped(c)}
+      />
+    );
+  };
 
   const catBlocks = [
     { key: "cs_core" as TabKey, label: s.sections.csCore, icon: "💻", done: cat.csCore.doneCredits, total: cat.csCore.totalCredits, sub: `${cat.csCore.done} / ${cat.csCore.total} ${s.sections.courses} · ${cat.csCore.totalCredits} ${s.sections.credits}`, color: CAT_COLORS[0], bg: "rgba(139,92,246,0.07)", borderColor: "rgba(139,92,246,0.2)" },
@@ -380,10 +446,14 @@ function Dashboard() {
               <path d="M6 12v5c0 1.66 4 3 6 3s6-1.34 6-3v-5" />
             </svg>
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{ flex: 1, minWidth: 0, cursor: (!isVisitor && user) ? "pointer" : "default" }}
+            onClick={() => { if (!isVisitor && user) window.location.href = "/profile"; }}
+            title={(!isVisitor && user) ? (lang === "ar" ? "الملف الشخصي" : "Edit profile") : undefined}
+          >
             <div style={{ fontSize: 13, fontWeight: 500, color: "var(--color-foreground)", lineHeight: 1.1 }}>{s.header.title}</div>
             <div style={{ fontSize: 10, color: "var(--ds-muted)", fontFamily: "var(--font-mono)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {isVisitor ? s.header.visitor : user?.email}
+              {isVisitor ? s.header.visitor : (profile?.full_name || user?.email)}
             </div>
           </div>
           <button
@@ -527,6 +597,39 @@ function Dashboard() {
               </div>
             </div>
 
+            {/* GPA card — only shown when ≥1 graded course */}
+            {gpa !== null && (
+              <div style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 12, padding: "16px 20px",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+              }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 4 }}>
+                    {lang === "ar" ? "المعدل التراكمي" : "Cumulative GPA"}
+                  </div>
+                  <div style={{ fontSize: 26, fontWeight: 700, color: "var(--color-foreground)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                    {gpa.toFixed(2)}
+                    <span style={{ fontSize: 13, color: "var(--ds-muted)", fontWeight: 400, marginLeft: 6 }}>/ 5.00</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ds-muted)", marginTop: 5 }}>
+                    {gradedCount} {lang === "ar" ? "مقرر مُقيَّم" : "graded courses"} · {gradedCredits} {lang === "ar" ? "ساعة" : "credits"}
+                  </div>
+                </div>
+                <div style={{
+                  width: 54, height: 54, borderRadius: "50%", flexShrink: 0,
+                  background: gpa >= 4.5 ? "rgba(34,197,94,0.1)" : gpa >= 3.0 ? "rgba(249,115,22,0.1)" : "rgba(239,68,68,0.1)",
+                  border: `2px solid ${gpa >= 4.5 ? "rgba(34,197,94,0.3)" : gpa >= 3.0 ? "rgba(249,115,22,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18, fontWeight: 700,
+                  color: gpa >= 4.5 ? "#22c55e" : gpa >= 3.0 ? "#f97316" : "#ef4444",
+                }}>
+                  {gpa >= 4.75 ? "A" : gpa >= 4.25 ? "B+" : gpa >= 3.75 ? "B" : gpa >= 3.25 ? "C+" : gpa >= 2.75 ? "C" : gpa >= 2.25 ? "D+" : gpa >= 1.5 ? "D" : "F"}
+                </div>
+              </div>
+            )}
+
             {/* Category 3-column cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {catBlocks.map((c) => (
@@ -662,6 +765,89 @@ function Dashboard() {
           </div>
         )}
       </main>
+
+      {/* ── Completion Modal (grade + semester) ── */}
+      {pendingCourse && (
+        <div
+          style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={() => setPendingCourse(null)}
+        >
+          <div
+            style={{ background: "var(--color-card, #111)", border: "1px solid var(--ds-line-strong, #2a2a2a)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 340 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Course info */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 4 }}>
+                {lang === "ar" ? "تسجيل إكمال المقرر" : "Mark as Completed"}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-foreground)" }}>
+                {lang === "ar" && pendingCourse.name_ar ? pendingCourse.name_ar : pendingCourse.name}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--ds-muted)", fontFamily: "var(--font-mono)", marginTop: 3 }}>
+                {lang === "ar" && pendingCourse.code_ar ? pendingCourse.code_ar : pendingCourse.code} · {pendingCourse.credits} {lang === "ar" ? "ساعة" : "cr"}
+              </div>
+            </div>
+
+            {/* Semester */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
+                {lang === "ar" ? "الفصل الدراسي (اختياري)" : "Semester (optional)"}
+              </div>
+              <select
+                value={pendingSemester}
+                onChange={(e) => setPendingSemester(e.target.value)}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, #000)", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 13, fontFamily: "var(--font-sans)", outline: "none" }}
+              >
+                <option value="">{lang === "ar" ? "— اختر الفصل —" : "— Select semester —"}</option>
+                {semesterOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+
+            {/* Grade */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 8 }}>
+                {lang === "ar" ? "الدرجة (اختياري)" : "Grade (optional)"}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {(["A", "B+", "B", "C+", "C", "D+", "D", "F"] as const).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setPendingGrade(pendingGrade === g ? "" : g)}
+                    style={{
+                      padding: "6px 12px", cursor: "pointer",
+                      border: `1px solid ${pendingGrade === g ? "#f97316" : "var(--ds-line-strong, #333)"}`,
+                      background: pendingGrade === g ? "rgba(249,115,22,0.15)" : "transparent",
+                      color: pendingGrade === g ? "#f97316" : "var(--ds-muted)",
+                      borderRadius: 6, fontSize: 12, fontWeight: 600, fontFamily: "var(--font-mono)",
+                      transition: "all 120ms",
+                    }}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => { toggle.mutate({ course: pendingCourse, grade: null, semester: null }); setPendingCourse(null); }}
+                style={{ flex: 1, padding: "10px 0", cursor: "pointer", background: "transparent", color: "var(--ds-muted)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 13, fontFamily: "var(--font-sans)" }}
+              >
+                {lang === "ar" ? "تخطي" : "Skip"}
+              </button>
+              <button
+                onClick={() => { toggle.mutate({ course: pendingCourse, grade: pendingGrade || null, semester: pendingSemester || null }); setPendingCourse(null); }}
+                style={{ flex: 2, padding: "10px 0", cursor: "pointer", background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 500, fontFamily: "var(--font-sans)", boxShadow: "0 0 20px rgba(249,115,22,0.3)" }}
+              >
+                {lang === "ar" ? "تسجيل الإكمال" : "Mark Done"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
