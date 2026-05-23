@@ -33,7 +33,7 @@ function AuthPage() {
     queryKey: ["colleges"],
     queryFn: async () => {
       const { data } = await (supabase.from("colleges") as any).select("*").order("name");
-      return data as { id: string; name: string; name_ar: string | null }[];
+      return (data ?? []) as { id: string; name: string; name_ar: string | null }[];
     },
   });
 
@@ -41,7 +41,7 @@ function AuthPage() {
     queryKey: ["majors"],
     queryFn: async () => {
       const { data } = await (supabase.from("majors") as any).select("*").order("name");
-      return data as { id: string; college_id: string; name: string; name_ar: string | null }[];
+      return (data ?? []) as { id: string; college_id: string; name: string; name_ar: string | null }[];
     },
   });
 
