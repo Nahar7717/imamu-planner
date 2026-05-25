@@ -597,8 +597,8 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* GPA card — only shown when ≥1 graded course */}
-            {gpa !== null && (
+            {/* GPA card — shown for logged-in users once they have completed courses */}
+            {!isVisitor && completedCodes.size > 0 && (
               <div style={{
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -610,22 +610,24 @@ function Dashboard() {
                     {lang === "ar" ? "المعدل التراكمي" : "Cumulative GPA"}
                   </div>
                   <div style={{ fontSize: 26, fontWeight: 700, color: "var(--color-foreground)", letterSpacing: "-0.02em", lineHeight: 1 }}>
-                    {gpa.toFixed(2)}
+                    {gpa !== null ? gpa.toFixed(2) : "—"}
                     <span style={{ fontSize: 13, color: "var(--ds-muted)", fontWeight: 400, marginLeft: 6 }}>/ 5.00</span>
                   </div>
                   <div style={{ fontSize: 11, color: "var(--ds-muted)", marginTop: 5 }}>
-                    {gradedCount} {lang === "ar" ? "مقرر مُقيَّم" : "graded courses"} · {gradedCredits} {lang === "ar" ? "ساعة" : "credits"}
+                    {gpa !== null
+                      ? `${gradedCount} ${lang === "ar" ? "مقرر مُقيَّم" : "graded courses"} · ${gradedCredits} ${lang === "ar" ? "ساعة" : "credits"}`
+                      : (lang === "ar" ? "سجّل درجاتك عند إكمال المقررات" : "Log grades when marking courses done")}
                   </div>
                 </div>
                 <div style={{
                   width: 54, height: 54, borderRadius: "50%", flexShrink: 0,
-                  background: gpa >= 4.5 ? "rgba(34,197,94,0.1)" : gpa >= 3.0 ? "rgba(249,115,22,0.1)" : "rgba(239,68,68,0.1)",
-                  border: `2px solid ${gpa >= 4.5 ? "rgba(34,197,94,0.3)" : gpa >= 3.0 ? "rgba(249,115,22,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  background: gpa === null ? "rgba(255,255,255,0.04)" : gpa >= 4.5 ? "rgba(34,197,94,0.1)" : gpa >= 3.0 ? "rgba(249,115,22,0.1)" : "rgba(239,68,68,0.1)",
+                  border: `2px solid ${gpa === null ? "rgba(255,255,255,0.08)" : gpa >= 4.5 ? "rgba(34,197,94,0.3)" : gpa >= 3.0 ? "rgba(249,115,22,0.3)" : "rgba(239,68,68,0.3)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 18, fontWeight: 700,
-                  color: gpa >= 4.5 ? "#22c55e" : gpa >= 3.0 ? "#f97316" : "#ef4444",
+                  fontSize: gpa === null ? 22 : 18, fontWeight: 700,
+                  color: gpa === null ? "var(--ds-muted)" : gpa >= 4.5 ? "#22c55e" : gpa >= 3.0 ? "#f97316" : "#ef4444",
                 }}>
-                  {gpa >= 4.75 ? "A" : gpa >= 4.25 ? "B+" : gpa >= 3.75 ? "B" : gpa >= 3.25 ? "C+" : gpa >= 2.75 ? "C" : gpa >= 2.25 ? "D+" : gpa >= 1.5 ? "D" : "F"}
+                  {gpa === null ? "?" : gpa >= 4.75 ? "A" : gpa >= 4.25 ? "B+" : gpa >= 3.75 ? "B" : gpa >= 3.25 ? "C+" : gpa >= 2.75 ? "C" : gpa >= 2.25 ? "D+" : gpa >= 1.5 ? "D" : "F"}
                 </div>
               </div>
             )}
