@@ -8,8 +8,6 @@ export function CourseCard({
   course,
   status,
   onToggle,
-  grade = null,
-  semester = null,
   missingPrereqs = [],
   allPrereqs = [],
   recentlyUnlocked = false,
@@ -18,8 +16,6 @@ export function CourseCard({
   course: Course;
   status: CourseStatus;
   onToggle: () => void;
-  grade?: string | null;
-  semester?: string | null;
   missingPrereqs?: string[];
   allPrereqs?: { code: string; code_ar: string | null }[];
   recentlyUnlocked?: boolean;
@@ -102,15 +98,6 @@ export function CourseCard({
           {/* Prereq tooltip — only on locked courses with missing prereqs */}
           {allPrereqs.length > 0 && (
             <PrereqTooltip prereqs={allPrereqs} missingSet={new Set(missingPrereqs)} lang={lang} />
-          )}
-          {grade && status === "completed" && (
-            <span style={{
-              fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 700,
-              background: "rgba(249,115,22,0.12)", color: "#f97316",
-              padding: "2px 7px", borderRadius: 4, letterSpacing: "0.03em",
-            }}>
-              {grade}
-            </span>
           )}
           <span style={{
             fontFamily: "var(--font-mono)", fontSize: 10,
