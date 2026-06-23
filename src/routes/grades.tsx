@@ -319,7 +319,7 @@ function GradesPage() {
                 placeholder="0.00 – 5.00"
                 value={baseGpa}
                 onChange={(e) => { setBaseGpa(normalizeDecimal(e.target.value)); setBaselineDirty(true); }}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: "left" }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
               />
             </label>
             <label style={{ flex: 1, minWidth: 140 }}>
@@ -331,7 +331,7 @@ function GradesPage() {
                 placeholder={lang === "ar" ? "مثال: 72" : "e.g. 72"}
                 value={baseCredits}
                 onChange={(e) => { setBaseCredits(normalizeInteger(e.target.value)); setBaselineDirty(true); }}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: "left" }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
               />
             </label>
           </div>
