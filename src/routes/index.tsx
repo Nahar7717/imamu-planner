@@ -41,9 +41,6 @@ function Dashboard() {
   const visitor = useVisitorProgress();
   const [tab, setTab] = useState<TabKey>("dashboard");
   const [recentUnlocks, setRecentUnlocks] = useState(new Set<string>());
-  const [pendingCourse, setPendingCourse] = useState<Course | null>(null);
-  const [pendingGrade, setPendingGrade] = useState("");
-  const [pendingSemester, setPendingSemester] = useState("");
 
   const TABS = TAB_KEYS.map((key) => ({ key, label: s.tabs[key] }));
 
@@ -149,7 +146,7 @@ function Dashboard() {
   );
 
   const toggle = useMutation({
-    mutationFn: async ({ course, grade, semester }: { course: Course; grade?: string | null; semester?: string | null }) => {
+    mutationFn: async ({ course }: { course: Course }) => {
       if (isVisitor) {
         const was = visitor.completedCodes.has(course.code);
         visitor.toggle(course.code);
@@ -166,13 +163,7 @@ function Dashboard() {
         return { unmarked: true, course };
       } else {
         const { error } = await supabase.from("student_progress").upsert(
-          {
-            student_id: user.id,
-            course_code: course.code,
-            status: "completed",
-            grade: grade || null,
-            semester_taken: semester || null,
-          },
+          { student_id: user.id, course_code: course.code, status: "completed" },
           { onConflict: "student_id,course_code" },
         );
         if (error) throw error;
@@ -235,21 +226,6 @@ function Dashboard() {
     if (totalCredits === 0) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
     return { gpa: totalPoints / totalCredits, gradedCount: count, gradedCredits: totalCredits };
   }, [progress, coursesByCode, isVisitor]);
-
-  // Semester options — First/Second/Summer from 2018 to next year
-  const semesterOptions = useMemo(() => {
-    const opts: { value: string; label: string }[] = [];
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear + 1; y >= 2018; y--) {
-      const ay = `${y}-${y + 1}`;
-      opts.push(
-        { value: `Summer-${y}`, label: lang === "ar" ? `صيف ${y}` : `Summer ${y}` },
-        { value: `Second-${ay}`, label: lang === "ar" ? `الفصل الثاني ${ay}` : `Second Semester ${ay}` },
-        { value: `First-${ay}`, label: lang === "ar" ? `الفصل الأول ${ay}` : `First Semester ${ay}` },
-      );
-    }
-    return opts;
-  }, [lang]);
 
   const getMissingPrereqs = useCallback(
     (course: Course) =>
@@ -395,17 +371,7 @@ function Dashboard() {
         key={c.code}
         course={c}
         status={status}
-        onToggle={() => {
-          if (completedCodes.has(c.code)) {
-            // Unmark directly — no modal needed
-            toggle.mutate({ course: c });
-          } else {
-            // Open modal to optionally capture grade + semester
-            setPendingCourse(c);
-            setPendingGrade("");
-            setPendingSemester("");
-          }
-        }}
+        onToggle={() => toggle.mutate({ course: c })}
         grade={entry?.grade ?? null}
         semester={entry?.semester_taken ?? null}
         missingPrereqs={getMissingPrereqs(c)}
@@ -618,6 +584,20 @@ function Dashboard() {
                       ? `${gradedCount} ${lang === "ar" ? "مقرر مُقيَّم" : "graded courses"} · ${gradedCredits} ${lang === "ar" ? "ساعة" : "credits"}`
                       : (lang === "ar" ? "سجّل درجاتك عند إكمال المقررات" : "Log grades when marking courses done")}
                   </div>
+                  <a
+                    href="/grades"
+                    style={{
+                      display: "inline-flex", alignItems: "center", gap: 4,
+                      marginTop: 10, padding: "6px 12px",
+                      background: "rgba(249,115,22,0.1)", color: "#f97316",
+                      border: "1px solid rgba(249,115,22,0.25)",
+                      borderRadius: 8, fontSize: 11, fontWeight: 600, fontFamily: "var(--font-sans)",
+                      textDecoration: "none", cursor: "pointer",
+                      transition: "all 150ms",
+                    }}
+                  >
+                    {lang === "ar" ? "إدخال الدرجات ←" : "Enter Grades →"}
+                  </a>
                 </div>
                 <div style={{
                   width: 54, height: 54, borderRadius: "50%", flexShrink: 0,
@@ -768,88 +748,6 @@ function Dashboard() {
         )}
       </main>
 
-      {/* ── Completion Modal (grade + semester) ── */}
-      {pendingCourse && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={() => setPendingCourse(null)}
-        >
-          <div
-            style={{ background: "var(--color-card, #111)", border: "1px solid var(--ds-line-strong, #2a2a2a)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 340 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Course info */}
-            <div style={{ marginBottom: 18 }}>
-              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 4 }}>
-                {lang === "ar" ? "تسجيل إكمال المقرر" : "Mark as Completed"}
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-foreground)" }}>
-                {lang === "ar" && pendingCourse.name_ar ? pendingCourse.name_ar : pendingCourse.name}
-              </div>
-              <div style={{ fontSize: 11, color: "var(--ds-muted)", fontFamily: "var(--font-mono)", marginTop: 3 }}>
-                {lang === "ar" && pendingCourse.code_ar ? pendingCourse.code_ar : pendingCourse.code} · {pendingCourse.credits} {lang === "ar" ? "ساعة" : "cr"}
-              </div>
-            </div>
-
-            {/* Semester */}
-            <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
-                {lang === "ar" ? "الفصل الدراسي (اختياري)" : "Semester (optional)"}
-              </div>
-              <select
-                value={pendingSemester}
-                onChange={(e) => setPendingSemester(e.target.value)}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, #000)", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 13, fontFamily: "var(--font-sans)", outline: "none" }}
-              >
-                <option value="">{lang === "ar" ? "— اختر الفصل —" : "— Select semester —"}</option>
-                {semesterOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-
-            {/* Grade */}
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 8 }}>
-                {lang === "ar" ? "الدرجة (اختياري)" : "Grade (optional)"}
-              </div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {(["A", "B+", "B", "C+", "C", "D+", "D", "F"] as const).map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => setPendingGrade(pendingGrade === g ? "" : g)}
-                    style={{
-                      padding: "6px 12px", cursor: "pointer",
-                      border: `1px solid ${pendingGrade === g ? "#f97316" : "var(--ds-line-strong, #333)"}`,
-                      background: pendingGrade === g ? "rgba(249,115,22,0.15)" : "transparent",
-                      color: pendingGrade === g ? "#f97316" : "var(--ds-muted)",
-                      borderRadius: 6, fontSize: 12, fontWeight: 600, fontFamily: "var(--font-mono)",
-                      transition: "all 120ms",
-                    }}
-                  >
-                    {g}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => { toggle.mutate({ course: pendingCourse, grade: null, semester: null }); setPendingCourse(null); }}
-                style={{ flex: 1, padding: "10px 0", cursor: "pointer", background: "transparent", color: "var(--ds-muted)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 13, fontFamily: "var(--font-sans)" }}
-              >
-                {lang === "ar" ? "تخطي" : "Skip"}
-              </button>
-              <button
-                onClick={() => { toggle.mutate({ course: pendingCourse, grade: pendingGrade || null, semester: pendingSemester || null }); setPendingCourse(null); }}
-                style={{ flex: 2, padding: "10px 0", cursor: "pointer", background: "linear-gradient(135deg, #f97316, #ec4899)", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 500, fontFamily: "var(--font-sans)", boxShadow: "0 0 20px rgba(249,115,22,0.3)" }}
-              >
-                {lang === "ar" ? "تسجيل الإكمال" : "Mark Done"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
