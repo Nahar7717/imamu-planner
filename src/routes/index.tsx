@@ -107,11 +107,11 @@ function Dashboard() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.from("profiles") as any)
-        .select("major_id, is_admin, full_name, baseline_gpa, baseline_credits")
+        .select("major_id, is_admin, full_name, baseline_gpa, baseline_credits, baseline_points")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { major_id: string | null; is_admin: boolean; full_name: string | null; baseline_gpa: number | null; baseline_credits: number | null };
+      return data as { major_id: string | null; is_admin: boolean; full_name: string | null; baseline_gpa: number | null; baseline_credits: number | null; baseline_points: number | null };
     },
   });
 
@@ -224,16 +224,23 @@ function Dashboard() {
         }
       }
     }
-    // Fold in prior GPA baseline (e.g. for transfer students)
+    // Fold in prior GPA baseline (e.g. for transfer students).
+    // Exact points (baseline_points) take priority over GPA × credits.
     const baseGpa = profile?.baseline_gpa;
     const baseCredits = profile?.baseline_credits;
-    if (baseGpa != null && baseCredits != null && baseCredits > 0) {
-      totalPoints += baseGpa * baseCredits;
-      totalCredits += baseCredits;
+    const basePoints = profile?.baseline_points;
+    if (baseCredits != null && baseCredits > 0) {
+      if (basePoints != null) {
+        totalPoints += basePoints;
+        totalCredits += baseCredits;
+      } else if (baseGpa != null) {
+        totalPoints += baseGpa * baseCredits;
+        totalCredits += baseCredits;
+      }
     }
     if (totalCredits === 0) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
     return { gpa: totalPoints / totalCredits, gradedCount: count, gradedCredits: totalCredits };
-  }, [progress, coursesByCode, isVisitor, profile?.baseline_gpa, profile?.baseline_credits]);
+  }, [progress, coursesByCode, isVisitor, profile?.baseline_gpa, profile?.baseline_credits, profile?.baseline_points]);
 
   const getMissingPrereqs = useCallback(
     (course: Course) =>

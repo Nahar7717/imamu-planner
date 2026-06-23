@@ -77,11 +77,11 @@ function GradesPage() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.from("profiles") as any)
-        .select("baseline_gpa, baseline_credits")
+        .select("baseline_gpa, baseline_credits, baseline_points")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { baseline_gpa: number | null; baseline_credits: number | null };
+      return data as { baseline_gpa: number | null; baseline_credits: number | null; baseline_points: number | null };
     },
   });
 
@@ -107,6 +107,7 @@ function GradesPage() {
   // Baseline local state (string inputs, empty = not set)
   const [baseGpa, setBaseGpa] = useState("");
   const [baseCredits, setBaseCredits] = useState("");
+  const [basePoints, setBasePoints] = useState("");
   const [baselineInit, setBaselineInit] = useState(false);
   const [baselineDirty, setBaselineDirty] = useState(false);
 
@@ -114,13 +115,19 @@ function GradesPage() {
     if (baseline && !baselineInit) {
       setBaseGpa(baseline.baseline_gpa != null ? String(baseline.baseline_gpa) : "");
       setBaseCredits(baseline.baseline_credits != null ? String(baseline.baseline_credits) : "");
+      setBasePoints(baseline.baseline_points != null ? String(baseline.baseline_points) : "");
       setBaselineInit(true);
     }
   }, [baseline, baselineInit]);
 
   const baseGpaNum = parseFloat(baseGpa);
   const baseCreditsNum = parseInt(baseCredits, 10);
-  const hasBaseline = !isNaN(baseGpaNum) && !isNaN(baseCreditsNum) && baseCreditsNum > 0;
+  const basePointsNum = parseFloat(basePoints);
+  const hasBaseCredits = !isNaN(baseCreditsNum) && baseCreditsNum > 0;
+  // Exact points (النقاط) take priority; otherwise reconstruct from GPA × credits
+  const hasPoints = hasBaseCredits && !isNaN(basePointsNum) && basePointsNum >= 0;
+  const hasBaseline = hasBaseCredits && (hasPoints || !isNaN(baseGpaNum));
+  const priorPoints = hasPoints ? basePointsNum : baseGpaNum * baseCreditsNum;
 
   useEffect(() => {
     if (courses.length > 0 && progress.length > 0 && !initialized) {
@@ -166,12 +173,12 @@ function GradesPage() {
       }
     }
     if (hasBaseline) {
-      totalPoints += baseGpaNum * baseCreditsNum;
+      totalPoints += priorPoints;
       totalCredits += baseCreditsNum;
     }
     if (totalCredits === 0) return { previewGpa: null, previewCount: 0, previewCredits: 0 };
     return { previewGpa: totalPoints / totalCredits, previewCount: count, previewCredits: totalCredits };
-  }, [rows, hasBaseline, baseGpaNum, baseCreditsNum]);
+  }, [rows, hasBaseline, priorPoints, baseCreditsNum]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -192,8 +199,9 @@ function GradesPage() {
       if (baselineDirty) {
         const { error } = await (supabase.from("profiles") as any)
           .update({
-            baseline_gpa: hasBaseline ? baseGpaNum : null,
-            baseline_credits: hasBaseline ? baseCreditsNum : null,
+            baseline_gpa: hasBaseCredits && !isNaN(baseGpaNum) ? baseGpaNum : null,
+            baseline_credits: hasBaseCredits ? baseCreditsNum : null,
+            baseline_points: hasPoints ? basePointsNum : null,
           })
           .eq("id", user!.id);
         if (error) throw error;
@@ -307,8 +315,8 @@ function GradesPage() {
           </div>
           <div style={{ fontSize: 12, color: "var(--ds-muted)", lineHeight: 1.6, marginBottom: 14 }}>
             {lang === "ar"
-              ? "لو أنت محوّل تخصص أو تعرف معدلك الحالي وما تبي تدخل كل مادة قديمة — اكتب معدلك التراكمي وعدد ساعاتك المكتسبة، ويُحسب فوقها المواد الجديدة."
-              : "Transfer student, or already know your GPA and don't want to re-enter old courses? Enter your cumulative GPA and earned credits — new courses below build on top of it."}
+              ? "لو أنت محوّل تخصص أو تعرف معدلك الحالي وما تبي تدخل كل مادة قديمة — اكتب ساعاتك المكتسبة مع المعدل، ويُحسب فوقها المواد الجديدة. للأدق: اكتب «النقاط» من سجلك الأكاديمي بدل المعدل."
+              : "Transfer student, or already know your GPA and don't want to re-enter old courses? Enter your earned credits with your GPA — new courses build on top. For an exact result, enter the \"points\" from your transcript instead of the GPA."}
           </div>
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
             <label style={{ flex: 1, minWidth: 140 }}>
@@ -325,7 +333,7 @@ function GradesPage() {
             </label>
             <label style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
-                {lang === "ar" ? "الساعات المكتسبة" : "Earned credits"}
+                {lang === "ar" ? "الساعات السابقة" : "Prior hours"}
               </div>
               <input
                 type="text" inputMode="numeric" dir="ltr"
@@ -335,12 +343,31 @@ function GradesPage() {
                 style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
               />
             </label>
+            <label style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
+                {lang === "ar" ? "النقاط — أدق (اختياري)" : "Points — precise (optional)"}
+              </div>
+              <input
+                type="text" inputMode="decimal" dir="ltr"
+                placeholder={lang === "ar" ? "مثال: 399.25" : "e.g. 399.25"}
+                value={basePoints}
+                onChange={(e) => { setBasePoints(normalizeDecimal(e.target.value)); setBaselineDirty(true); }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: `1px solid ${hasPoints ? "rgba(34,197,94,0.4)" : "var(--ds-line-strong, #333)"}`, borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
+              />
+            </label>
           </div>
-          {(baseGpa !== "" || baseCredits !== "") && !hasBaseline && (
+          {(baseGpa !== "" || baseCredits !== "" || basePoints !== "") && !hasBaseline && (
             <div style={{ fontSize: 11, color: "#ef4444", marginTop: 10 }}>
               {lang === "ar"
-                ? "أدخل معدلاً بين 0 و5 وعدد ساعات أكبر من صفر حتى يُحتسب."
-                : "Enter a GPA between 0–5 and credits above 0 for it to count."}
+                ? "أدخل عدد الساعات (أكبر من صفر) مع المعدل أو النقاط حتى يُحتسب."
+                : "Enter credits (above 0) plus either a GPA or points for it to count."}
+            </div>
+          )}
+          {hasPoints && (
+            <div style={{ fontSize: 11, color: "#22c55e", marginTop: 10, lineHeight: 1.6 }}>
+              {lang === "ar"
+                ? `✓ يُحسب من النقاط مباشرة (أدق نتيجة). تأكد أن النقاط ÷ الساعات = معدلك (${baseCreditsNum > 0 ? (basePointsNum / baseCreditsNum).toFixed(2) : "—"}).`
+                : `✓ Using points directly for an exact result. Check that points ÷ hours = your GPA (${baseCreditsNum > 0 ? (basePointsNum / baseCreditsNum).toFixed(2) : "—"}).`}
             </div>
           )}
         </div>
