@@ -27,9 +27,10 @@ const normalizeDecimal = (s: string) => {
 // Keep digits only (for credits input)
 const normalizeInteger = (s: string) => toLatinDigits(s).replace(/[^0-9]/g, "");
 
-const GRADES = ["A", "B+", "B", "C+", "C", "D+", "D", "F"] as const;
+const GRADES = ["A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"] as const;
+// Saudi 5.0 scale (IMAMU)
 const GPA_POINTS: Record<string, number> = {
-  A: 5.0, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 0.0,
+  "A+": 5.0, A: 4.75, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 1.0,
 };
 
 type CourseRow = {
@@ -387,9 +388,14 @@ function GradesPage() {
               <Stat label={lang === "ar" ? "مكتملة" : "Completed"} value={String(rows.length)} />
               <Stat label={lang === "ar" ? "مُقيَّمة" : "Graded"} value={`${previewCount} / ${rows.length}`} />
               <Stat
-                label={lang === "ar" ? "التقدير" : "Grade"}
-                value={previewGpa === null ? "—" : previewGpa >= 4.75 ? "A" : previewGpa >= 4.25 ? "B+" : previewGpa >= 3.75 ? "B" : previewGpa >= 3.25 ? "C+" : previewGpa >= 2.75 ? "C" : previewGpa >= 2.25 ? "D+" : "D"}
-                color={previewGpa === null ? undefined : previewGpa >= 4.5 ? "#22c55e" : previewGpa >= 3.0 ? "#f97316" : "#ef4444"}
+                label={lang === "ar" ? "التقدير" : "Standing"}
+                value={previewGpa === null ? "—"
+                  : previewGpa >= 4.5 ? (lang === "ar" ? "ممتاز" : "Excellent")
+                  : previewGpa >= 3.75 ? (lang === "ar" ? "جيد جداً" : "Very Good")
+                  : previewGpa >= 2.75 ? (lang === "ar" ? "جيد" : "Good")
+                  : previewGpa >= 2.0 ? (lang === "ar" ? "مقبول" : "Pass")
+                  : (lang === "ar" ? "ضعيف" : "Weak")}
+                color={previewGpa === null ? undefined : previewGpa >= 4.5 ? "#22c55e" : previewGpa >= 2.75 ? "#f97316" : "#ef4444"}
               />
             </div>
           </div>

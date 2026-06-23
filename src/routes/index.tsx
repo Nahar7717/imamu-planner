@@ -209,7 +209,8 @@ function Dashboard() {
   }, [progress]);
 
   // GPA calculation — Saudi 5-point scale
-  const GPA_POINTS: Record<string, number> = { A: 5.0, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 0.0 };
+  // Saudi 5.0 scale (IMAMU)
+  const GPA_POINTS: Record<string, number> = { "A+": 5.0, A: 4.75, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 1.0 };
   const { gpa, gradedCount, gradedCredits } = useMemo(() => {
     if (isVisitor) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
     let totalPoints = 0, totalCredits = 0, count = 0;
