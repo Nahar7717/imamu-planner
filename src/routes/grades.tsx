@@ -55,6 +55,20 @@ function GradesPage() {
     },
   });
 
+  // Baseline (prior GPA + credits) — e.g. for transfer students
+  const { data: baseline } = useQuery({
+    queryKey: ["baseline-gpa", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("profiles") as any)
+        .select("baseline_gpa, baseline_credits")
+        .eq("id", user!.id)
+        .single();
+      if (error) return null;
+      return data as { baseline_gpa: number | null; baseline_credits: number | null };
+    },
+  });
+
   // Course details for completed codes
   const completedCodes = useMemo(() => progress.map((p) => p.course_code), [progress]);
 
@@ -73,6 +87,24 @@ function GradesPage() {
   // Local editable rows
   const [rows, setRows] = useState<CourseRow[]>([]);
   const [initialized, setInitialized] = useState(false);
+
+  // Baseline local state (string inputs, empty = not set)
+  const [baseGpa, setBaseGpa] = useState("");
+  const [baseCredits, setBaseCredits] = useState("");
+  const [baselineInit, setBaselineInit] = useState(false);
+  const [baselineDirty, setBaselineDirty] = useState(false);
+
+  useEffect(() => {
+    if (baseline && !baselineInit) {
+      setBaseGpa(baseline.baseline_gpa != null ? String(baseline.baseline_gpa) : "");
+      setBaseCredits(baseline.baseline_credits != null ? String(baseline.baseline_credits) : "");
+      setBaselineInit(true);
+    }
+  }, [baseline, baselineInit]);
+
+  const baseGpaNum = parseFloat(baseGpa);
+  const baseCreditsNum = parseInt(baseCredits, 10);
+  const hasBaseline = !isNaN(baseGpaNum) && !isNaN(baseCreditsNum) && baseCreditsNum > 0;
 
   useEffect(() => {
     if (courses.length > 0 && progress.length > 0 && !initialized) {
@@ -105,8 +137,9 @@ function GradesPage() {
   };
 
   const dirtyCount = rows.filter((r) => r.dirty).length;
+  const hasChanges = dirtyCount > 0 || baselineDirty;
 
-  // GPA preview from local state
+  // GPA preview from local state (folds in the baseline if set)
   const { previewGpa, previewCount, previewCredits } = useMemo(() => {
     let totalPoints = 0, totalCredits = 0, count = 0;
     for (const r of rows) {
@@ -116,9 +149,13 @@ function GradesPage() {
         count++;
       }
     }
+    if (hasBaseline) {
+      totalPoints += baseGpaNum * baseCreditsNum;
+      totalCredits += baseCreditsNum;
+    }
     if (totalCredits === 0) return { previewGpa: null, previewCount: 0, previewCredits: 0 };
     return { previewGpa: totalPoints / totalCredits, previewCount: count, previewCredits: totalCredits };
-  }, [rows]);
+  }, [rows, hasBaseline, baseGpaNum, baseCreditsNum]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -136,12 +173,24 @@ function GradesPage() {
         );
         if (error) throw error;
       }
+      if (baselineDirty) {
+        const { error } = await (supabase.from("profiles") as any)
+          .update({
+            baseline_gpa: hasBaseline ? baseGpaNum : null,
+            baseline_credits: hasBaseline ? baseCreditsNum : null,
+          })
+          .eq("id", user!.id);
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
       setRows((prev) => prev.map((r) => ({ ...r, dirty: false })));
+      setBaselineDirty(false);
       qc.invalidateQueries({ queryKey: ["progress"] });
       qc.invalidateQueries({ queryKey: ["progress-grades"] });
-      toast.success(lang === "ar" ? "تم حفظ الدرجات ✓" : "Grades saved ✓");
+      qc.invalidateQueries({ queryKey: ["baseline-gpa"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
+      toast.success(lang === "ar" ? "تم الحفظ ✓" : "Saved ✓");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to save"),
   });
@@ -208,7 +257,7 @@ function GradesPage() {
         <button onClick={() => setLang(lang === "en" ? "ar" : "en")} style={{ background: "transparent", border: "1px solid var(--ds-line-strong, #333)", color: "var(--ds-body)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontFamily: "var(--font-mono)", fontWeight: 600 }}>
           {lang === "en" ? "ع" : "EN"}
         </button>
-        {dirtyCount > 0 && (
+        {hasChanges && (
           <button
             onClick={() => save.mutate()}
             disabled={save.isPending}
@@ -222,12 +271,63 @@ function GradesPage() {
           >
             {save.isPending
               ? (lang === "ar" ? "جارٍ الحفظ…" : "Saving…")
-              : (lang === "ar" ? `حفظ (${dirtyCount})` : `Save ${dirtyCount} change${dirtyCount !== 1 ? "s" : ""}`)}
+              : (lang === "ar" ? "حفظ" : "Save")}
           </button>
         )}
       </header>
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "24px 20px 100px" }}>
+
+        {/* Baseline / prior GPA card */}
+        <div style={{
+          background: "rgba(249,115,22,0.04)", border: "1px solid rgba(249,115,22,0.18)",
+          borderRadius: 12, padding: "16px 20px", marginBottom: 24,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-foreground)", marginBottom: 4 }}>
+            {lang === "ar" ? "نقطة البداية / المعدل السابق" : "Starting point / prior GPA"}
+            <span style={{ fontSize: 11, fontWeight: 400, color: "var(--ds-muted)", marginInlineStart: 8 }}>
+              {lang === "ar" ? "(اختياري)" : "(optional)"}
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: "var(--ds-muted)", lineHeight: 1.6, marginBottom: 14 }}>
+            {lang === "ar"
+              ? "لو أنت محوّل تخصص أو تعرف معدلك الحالي وما تبي تدخل كل مادة قديمة — اكتب معدلك التراكمي وعدد ساعاتك المكتسبة، ويُحسب فوقها المواد الجديدة."
+              : "Transfer student, or already know your GPA and don't want to re-enter old courses? Enter your cumulative GPA and earned credits — new courses below build on top of it."}
+          </div>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <label style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
+                {lang === "ar" ? "المعدل التراكمي الحالي" : "Current cumulative GPA"}
+              </div>
+              <input
+                type="number" inputMode="decimal" min={0} max={5} step={0.01}
+                placeholder="0.00 – 5.00"
+                value={baseGpa}
+                onChange={(e) => { setBaseGpa(e.target.value); setBaselineDirty(true); }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box" }}
+              />
+            </label>
+            <label style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
+                {lang === "ar" ? "الساعات المكتسبة" : "Earned credits"}
+              </div>
+              <input
+                type="number" inputMode="numeric" min={0} step={1}
+                placeholder={lang === "ar" ? "مثال: 72" : "e.g. 72"}
+                value={baseCredits}
+                onChange={(e) => { setBaseCredits(e.target.value); setBaselineDirty(true); }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box" }}
+              />
+            </label>
+          </div>
+          {(baseGpa !== "" || baseCredits !== "") && !hasBaseline && (
+            <div style={{ fontSize: 11, color: "#ef4444", marginTop: 10 }}>
+              {lang === "ar"
+                ? "أدخل معدلاً بين 0 و5 وعدد ساعات أكبر من صفر حتى يُحتسب."
+                : "Enter a GPA between 0–5 and credits above 0 for it to count."}
+            </div>
+          )}
+        </div>
 
         {/* Empty state */}
         {rows.length === 0 && (
@@ -245,7 +345,7 @@ function GradesPage() {
         )}
 
         {/* GPA summary bar */}
-        {rows.length > 0 && (
+        {(rows.length > 0 || hasBaseline) && (
           <div style={{
             background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 12, padding: "16px 20px", marginBottom: 24,
@@ -261,7 +361,10 @@ function GradesPage() {
               </div>
               {previewGpa !== null && (
                 <div style={{ fontSize: 11, color: "var(--ds-muted)", marginTop: 4 }}>
-                  {previewCount} {lang === "ar" ? "مقرر" : "courses"} · {previewCredits} {lang === "ar" ? "ساعة" : "cr"}
+                  {previewCredits} {lang === "ar" ? "ساعة" : "cr"}
+                  {hasBaseline
+                    ? (lang === "ar" ? ` · شامل ${baseCreditsNum} ساعة سابقة` : ` · incl. ${baseCreditsNum} prior cr`)
+                    : ` · ${previewCount} ${lang === "ar" ? "مقرر" : "courses"}`}
                 </div>
               )}
             </div>
@@ -373,30 +476,30 @@ function GradesPage() {
         ))}
 
         {/* Bottom save button */}
-        {rows.length > 0 && (
+        {(rows.length > 0 || baselineDirty) && (
           <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 20px", background: "rgba(10,10,10,0.95)", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
             <div style={{ fontSize: 12, color: "var(--ds-muted)" }}>
-              {dirtyCount > 0
-                ? (lang === "ar" ? `${dirtyCount} تغيير غير محفوظ` : `${dirtyCount} unsaved change${dirtyCount !== 1 ? "s" : ""}`)
+              {hasChanges
+                ? (lang === "ar" ? "تغييرات غير محفوظة" : "Unsaved changes")
                 : (lang === "ar" ? "كل شيء محفوظ ✓" : "All saved ✓")}
             </div>
             <button
               onClick={() => save.mutate()}
-              disabled={save.isPending || dirtyCount === 0}
+              disabled={save.isPending || !hasChanges}
               style={{
                 padding: "10px 28px", border: "none",
-                cursor: dirtyCount === 0 || save.isPending ? "not-allowed" : "pointer",
-                background: dirtyCount === 0 ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #f97316, #ec4899)",
-                color: dirtyCount === 0 ? "var(--ds-muted)" : "#fff",
+                cursor: !hasChanges || save.isPending ? "not-allowed" : "pointer",
+                background: !hasChanges ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #f97316, #ec4899)",
+                color: !hasChanges ? "var(--ds-muted)" : "#fff",
                 borderRadius: 8, fontSize: 13, fontWeight: 500, fontFamily: "var(--font-sans)",
-                boxShadow: dirtyCount > 0 ? "0 0 20px rgba(249,115,22,0.3)" : "none",
+                boxShadow: hasChanges ? "0 0 20px rgba(249,115,22,0.3)" : "none",
                 opacity: save.isPending ? 0.7 : 1,
                 transition: "all 200ms",
               }}
             >
               {save.isPending
                 ? (lang === "ar" ? "جارٍ الحفظ…" : "Saving…")
-                : (lang === "ar" ? "حفظ الدرجات" : "Save Grades")}
+                : (lang === "ar" ? "حفظ" : "Save")}
             </button>
           </div>
         )}

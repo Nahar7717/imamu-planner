@@ -107,11 +107,11 @@ function Dashboard() {
     enabled: !!user,
     queryFn: async () => {
       const { data, error } = await (supabase.from("profiles") as any)
-        .select("major_id, is_admin, full_name")
+        .select("major_id, is_admin, full_name, baseline_gpa, baseline_credits")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { major_id: string | null; is_admin: boolean; full_name: string | null };
+      return data as { major_id: string | null; is_admin: boolean; full_name: string | null; baseline_gpa: number | null; baseline_credits: number | null };
     },
   });
 
@@ -223,9 +223,16 @@ function Dashboard() {
         }
       }
     }
+    // Fold in prior GPA baseline (e.g. for transfer students)
+    const baseGpa = profile?.baseline_gpa;
+    const baseCredits = profile?.baseline_credits;
+    if (baseGpa != null && baseCredits != null && baseCredits > 0) {
+      totalPoints += baseGpa * baseCredits;
+      totalCredits += baseCredits;
+    }
     if (totalCredits === 0) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
     return { gpa: totalPoints / totalCredits, gradedCount: count, gradedCredits: totalCredits };
-  }, [progress, coursesByCode, isVisitor]);
+  }, [progress, coursesByCode, isVisitor, profile?.baseline_gpa, profile?.baseline_credits]);
 
   const getMissingPrereqs = useCallback(
     (course: Course) =>
@@ -563,8 +570,8 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* GPA card — shown for logged-in users once they have completed courses */}
-            {!isVisitor && completedCodes.size > 0 && (
+            {/* GPA card — shown for logged-in users once they have completed courses or a prior-GPA baseline */}
+            {!isVisitor && (completedCodes.size > 0 || gpa !== null) && (
               <div style={{
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.08)",
