@@ -105,6 +105,8 @@ function GradesPage() {
   const [initialized, setInitialized] = useState(false);
 
   // Baseline local state (string inputs, empty = not set)
+  // baseMode picks which value the user types; the other is derived live.
+  const [baseMode, setBaseMode] = useState<"gpa" | "points">("gpa");
   const [baseGpa, setBaseGpa] = useState("");
   const [baseCredits, setBaseCredits] = useState("");
   const [basePoints, setBasePoints] = useState("");
@@ -116,18 +118,31 @@ function GradesPage() {
       setBaseGpa(baseline.baseline_gpa != null ? String(baseline.baseline_gpa) : "");
       setBaseCredits(baseline.baseline_credits != null ? String(baseline.baseline_credits) : "");
       setBasePoints(baseline.baseline_points != null ? String(baseline.baseline_points) : "");
+      setBaseMode(baseline.baseline_points != null ? "points" : "gpa");
       setBaselineInit(true);
     }
   }, [baseline, baselineInit]);
 
-  const baseGpaNum = parseFloat(baseGpa);
   const baseCreditsNum = parseInt(baseCredits, 10);
-  const basePointsNum = parseFloat(basePoints);
   const hasBaseCredits = !isNaN(baseCreditsNum) && baseCreditsNum > 0;
-  // Exact points (النقاط) take priority; otherwise reconstruct from GPA × credits
-  const hasPoints = hasBaseCredits && !isNaN(basePointsNum) && basePointsNum >= 0;
-  const hasBaseline = hasBaseCredits && (hasPoints || !isNaN(baseGpaNum));
-  const priorPoints = hasPoints ? basePointsNum : baseGpaNum * baseCreditsNum;
+  // The value the user is typing (depends on mode); the other is derived.
+  const typedGpaNum = parseFloat(baseGpa);
+  const typedPointsNum = parseFloat(basePoints);
+  const hasBaseline = hasBaseCredits && (baseMode === "gpa" ? !isNaN(typedGpaNum) : !isNaN(typedPointsNum));
+  // Prior points used in the GPA calc — exact when in points mode.
+  const priorPoints = baseMode === "points" ? typedPointsNum : typedGpaNum * baseCreditsNum;
+  // Live-derived display value for the non-editable field.
+  const derivedPoints = hasBaseCredits && !isNaN(typedGpaNum) ? (typedGpaNum * baseCreditsNum).toFixed(2) : "";
+  const derivedGpa = hasBaseCredits && !isNaN(typedPointsNum) ? (typedPointsNum / baseCreditsNum).toFixed(2) : "";
+
+  // Switch input mode, carrying over the derived value so nothing is lost.
+  const switchMode = (mode: "gpa" | "points") => {
+    if (mode === baseMode) return;
+    if (mode === "points") setBasePoints(derivedPoints);
+    else setBaseGpa(derivedGpa);
+    setBaseMode(mode);
+    setBaselineDirty(true);
+  };
 
   useEffect(() => {
     if (courses.length > 0 && progress.length > 0 && !initialized) {
@@ -199,9 +214,9 @@ function GradesPage() {
       if (baselineDirty) {
         const { error } = await (supabase.from("profiles") as any)
           .update({
-            baseline_gpa: hasBaseCredits && !isNaN(baseGpaNum) ? baseGpaNum : null,
-            baseline_credits: hasBaseCredits ? baseCreditsNum : null,
-            baseline_points: hasPoints ? basePointsNum : null,
+            baseline_credits: hasBaseline ? baseCreditsNum : null,
+            baseline_gpa: !hasBaseline ? null : (baseMode === "gpa" ? typedGpaNum : parseFloat(derivedGpa)),
+            baseline_points: (!hasBaseline || baseMode === "gpa") ? null : typedPointsNum,
           })
           .eq("id", user!.id);
         if (error) throw error;
@@ -315,22 +330,46 @@ function GradesPage() {
           </div>
           <div style={{ fontSize: 12, color: "var(--ds-muted)", lineHeight: 1.6, marginBottom: 14 }}>
             {lang === "ar"
-              ? "لو أنت محوّل تخصص أو تعرف معدلك الحالي وما تبي تدخل كل مادة قديمة — اكتب ساعاتك المكتسبة مع المعدل، ويُحسب فوقها المواد الجديدة. للأدق: اكتب «النقاط» من سجلك الأكاديمي بدل المعدل."
-              : "Transfer student, or already know your GPA and don't want to re-enter old courses? Enter your earned credits with your GPA — new courses build on top. For an exact result, enter the \"points\" from your transcript instead of the GPA."}
+              ? "لو أنت محوّل أو تعرف معدلك وما تبي تدخل كل مادة قديمة — اختر طريقة الإدخال، اكتب ساعاتك السابقة والقيمة، ويُحسب فوقها المواد الجديدة. الخانة الثانية تتحسب تلقائياً."
+              : "Transfer student, or already know your GPA? Pick an input method, enter your prior hours and the value — new courses build on top. The other field is computed automatically."}
           </div>
+
+          {/* Mode toggle: GPA vs Points */}
+          <div style={{ display: "inline-flex", background: "rgba(0,0,0,0.25)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, padding: 3, marginBottom: 14 }}>
+            {(["gpa", "points"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                style={{
+                  padding: "5px 14px", cursor: "pointer", border: "none", borderRadius: 6,
+                  background: baseMode === m ? "linear-gradient(135deg, #f97316, #ec4899)" : "transparent",
+                  color: baseMode === m ? "#fff" : "var(--ds-muted)",
+                  fontSize: 12, fontWeight: 600, fontFamily: "var(--font-sans)", transition: "all 150ms",
+                }}
+              >
+                {m === "gpa" ? (lang === "ar" ? "بالمعدل" : "By GPA") : (lang === "ar" ? "بالنقاط (أدق)" : "By points (exact)")}
+              </button>
+            ))}
+          </div>
+
           <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+            {/* GPA — editable in gpa mode, derived in points mode */}
             <label style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
-                {lang === "ar" ? "المعدل التراكمي الحالي" : "Current cumulative GPA"}
+                {lang === "ar" ? "المعدل التراكمي" : "Cumulative GPA"}
+                {baseMode === "points" && <span style={{ color: "#22c55e", marginInlineStart: 6 }}>{lang === "ar" ? "(محسوب)" : "(auto)"}</span>}
               </div>
               <input
                 type="text" inputMode="decimal" dir="ltr"
                 placeholder="0.00 – 5.00"
-                value={baseGpa}
-                onChange={(e) => { setBaseGpa(normalizeDecimal(e.target.value)); setBaselineDirty(true); }}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
+                readOnly={baseMode === "points"}
+                value={baseMode === "gpa" ? baseGpa : derivedGpa}
+                onChange={(e) => { if (baseMode === "gpa") { setBaseGpa(normalizeDecimal(e.target.value)); setBaselineDirty(true); } }}
+                style={{ width: "100%", padding: "9px 12px", background: baseMode === "points" ? "rgba(255,255,255,0.02)" : "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: baseMode === "points" ? "var(--ds-muted)" : "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left", cursor: baseMode === "points" ? "default" : "text" }}
               />
             </label>
+            {/* Prior hours — always editable */}
             <label style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
                 {lang === "ar" ? "الساعات السابقة" : "Prior hours"}
@@ -343,31 +382,34 @@ function GradesPage() {
                 style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
               />
             </label>
+            {/* Points — editable in points mode, derived in gpa mode */}
             <label style={{ flex: 1, minWidth: 140 }}>
               <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--ds-muted)", marginBottom: 6 }}>
-                {lang === "ar" ? "النقاط — أدق (اختياري)" : "Points — precise (optional)"}
+                {lang === "ar" ? "النقاط" : "Points"}
+                {baseMode === "gpa" && <span style={{ color: "#22c55e", marginInlineStart: 6 }}>{lang === "ar" ? "(محسوب)" : "(auto)"}</span>}
               </div>
               <input
                 type="text" inputMode="decimal" dir="ltr"
-                placeholder={lang === "ar" ? "مثال: 399.25" : "e.g. 399.25"}
-                value={basePoints}
-                onChange={(e) => { setBasePoints(normalizeDecimal(e.target.value)); setBaselineDirty(true); }}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: `1px solid ${hasPoints ? "rgba(34,197,94,0.4)" : "var(--ds-line-strong, #333)"}`, borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left" }}
+                placeholder={lang === "ar" ? "مثال: 329.04" : "e.g. 329.04"}
+                readOnly={baseMode === "gpa"}
+                value={baseMode === "points" ? basePoints : derivedPoints}
+                onChange={(e) => { if (baseMode === "points") { setBasePoints(normalizeDecimal(e.target.value)); setBaselineDirty(true); } }}
+                style={{ width: "100%", padding: "9px 12px", background: baseMode === "gpa" ? "rgba(255,255,255,0.02)" : "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: baseMode === "gpa" ? "var(--ds-muted)" : "var(--color-foreground)", border: `1px solid ${baseMode === "points" && hasBaseline ? "rgba(34,197,94,0.4)" : "var(--ds-line-strong, #333)"}`, borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left", cursor: baseMode === "gpa" ? "default" : "text" }}
               />
             </label>
           </div>
           {(baseGpa !== "" || baseCredits !== "" || basePoints !== "") && !hasBaseline && (
             <div style={{ fontSize: 11, color: "#ef4444", marginTop: 10 }}>
               {lang === "ar"
-                ? "أدخل عدد الساعات (أكبر من صفر) مع المعدل أو النقاط حتى يُحتسب."
-                : "Enter credits (above 0) plus either a GPA or points for it to count."}
+                ? "أدخل عدد الساعات (أكبر من صفر) مع القيمة المختارة حتى يُحتسب."
+                : "Enter prior hours (above 0) plus the selected value for it to count."}
             </div>
           )}
-          {hasPoints && (
+          {hasBaseline && baseMode === "points" && (
             <div style={{ fontSize: 11, color: "#22c55e", marginTop: 10, lineHeight: 1.6 }}>
               {lang === "ar"
-                ? `✓ يُحسب من النقاط مباشرة (أدق نتيجة). تأكد أن النقاط ÷ الساعات = معدلك (${baseCreditsNum > 0 ? (basePointsNum / baseCreditsNum).toFixed(2) : "—"}).`
-                : `✓ Using points directly for an exact result. Check that points ÷ hours = your GPA (${baseCreditsNum > 0 ? (basePointsNum / baseCreditsNum).toFixed(2) : "—"}).`}
+                ? "✓ يُحسب من النقاط مباشرة — أدق نتيجة، بدون تقريب."
+                : "✓ Computed directly from points — exact, no rounding."}
             </div>
           )}
         </div>
