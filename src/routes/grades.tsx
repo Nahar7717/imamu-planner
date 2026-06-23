@@ -12,6 +12,21 @@ export const Route = createFileRoute("/grades")({
   head: () => ({ meta: [{ title: "My Grades — Academic Planner" }] }),
 });
 
+// Convert Arabic-Indic digits (٠-٩) and Arabic decimal separator to Latin
+const toLatinDigits = (s: string) =>
+  s.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+   .replace(/[٫،]/g, ".");
+
+// Keep digits + a single decimal point (for GPA input)
+const normalizeDecimal = (s: string) => {
+  const cleaned = toLatinDigits(s).replace(/[^0-9.]/g, "");
+  const i = cleaned.indexOf(".");
+  return i === -1 ? cleaned : cleaned.slice(0, i + 1) + cleaned.slice(i + 1).replace(/\./g, "");
+};
+
+// Keep digits only (for credits input)
+const normalizeInteger = (s: string) => toLatinDigits(s).replace(/[^0-9]/g, "");
+
 const GRADES = ["A", "B+", "B", "C+", "C", "D+", "D", "F"] as const;
 const GPA_POINTS: Record<string, number> = {
   A: 5.0, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 0.0,
@@ -300,11 +315,11 @@ function GradesPage() {
                 {lang === "ar" ? "المعدل التراكمي الحالي" : "Current cumulative GPA"}
               </div>
               <input
-                type="number" inputMode="decimal" min={0} max={5} step={0.01}
+                type="text" inputMode="decimal" dir="ltr"
                 placeholder="0.00 – 5.00"
                 value={baseGpa}
-                onChange={(e) => { setBaseGpa(e.target.value); setBaselineDirty(true); }}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box" }}
+                onChange={(e) => { setBaseGpa(normalizeDecimal(e.target.value)); setBaselineDirty(true); }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: "left" }}
               />
             </label>
             <label style={{ flex: 1, minWidth: 140 }}>
@@ -312,11 +327,11 @@ function GradesPage() {
                 {lang === "ar" ? "الساعات المكتسبة" : "Earned credits"}
               </div>
               <input
-                type="number" inputMode="numeric" min={0} step={1}
+                type="text" inputMode="numeric" dir="ltr"
                 placeholder={lang === "ar" ? "مثال: 72" : "e.g. 72"}
                 value={baseCredits}
-                onChange={(e) => { setBaseCredits(e.target.value); setBaselineDirty(true); }}
-                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box" }}
+                onChange={(e) => { setBaseCredits(normalizeInteger(e.target.value)); setBaselineDirty(true); }}
+                style={{ width: "100%", padding: "9px 12px", background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: "left" }}
               />
             </label>
           </div>
