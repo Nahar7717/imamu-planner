@@ -212,8 +212,32 @@ function Dashboard() {
   // Saudi 5.0 scale (IMAMU)
   const GPA_POINTS: Record<string, number> = { "A+": 5.0, A: 4.75, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 1.0 };
   const { gpa, gradedCount, gradedCredits } = useMemo(() => {
-    if (isVisitor) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
     let totalPoints = 0, totalCredits = 0, count = 0;
+    if (isVisitor) {
+      // Visitor grades + baseline come from localStorage
+      for (const code of visitor.completedCodes) {
+        const g = visitor.grades[code];
+        if (g?.grade && GPA_POINTS[g.grade] !== undefined) {
+          const course = coursesByCode.get(code);
+          if (course) {
+            totalPoints += GPA_POINTS[g.grade] * course.credits;
+            totalCredits += course.credits;
+            count++;
+          }
+        }
+      }
+      const b = visitor.baseline;
+      const bCredits = parseInt(b.credits, 10);
+      if (!isNaN(bCredits) && bCredits > 0) {
+        const bPoints = b.mode === "points" ? parseFloat(b.points) : parseFloat(b.gpa) * bCredits;
+        if (!isNaN(bPoints)) {
+          totalPoints += bPoints;
+          totalCredits += bCredits;
+        }
+      }
+      if (totalCredits === 0) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
+      return { gpa: totalPoints / totalCredits, gradedCount: count, gradedCredits: totalCredits };
+    }
     for (const entry of progress) {
       if (entry.status === "completed" && entry.grade && GPA_POINTS[entry.grade] !== undefined) {
         const course = coursesByCode.get(entry.course_code);
@@ -240,7 +264,7 @@ function Dashboard() {
     }
     if (totalCredits === 0) return { gpa: null, gradedCount: 0, gradedCredits: 0 };
     return { gpa: totalPoints / totalCredits, gradedCount: count, gradedCredits: totalCredits };
-  }, [progress, coursesByCode, isVisitor, profile?.baseline_gpa, profile?.baseline_credits, profile?.baseline_points]);
+  }, [progress, coursesByCode, isVisitor, visitor.completedCodes, visitor.grades, visitor.baseline, profile?.baseline_gpa, profile?.baseline_credits, profile?.baseline_points]);
 
   const getMissingPrereqs = useCallback(
     (course: Course) =>
@@ -578,8 +602,8 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* GPA card — shown for logged-in users once they have completed courses or a prior-GPA baseline */}
-            {!isVisitor && (completedCodes.size > 0 || gpa !== null) && (
+            {/* GPA card — shown once there are completed courses or a prior-GPA baseline (visitors included) */}
+            {(completedCodes.size > 0 || gpa !== null) && (
               <div style={{
                 background: "rgba(255,255,255,0.03)",
                 border: "1px solid rgba(255,255,255,0.08)",

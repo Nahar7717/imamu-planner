@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
+import { useVisitorProgress } from "@/hooks/useVisitorProgress";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/grades")({
@@ -47,14 +48,15 @@ type CourseRow = {
 
 function GradesPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, isVisitor } = useAuth();
   const { lang, setLang } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const visitor = useVisitorProgress();
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth" });
-  }, [loading, user, navigate]);
+    if (!loading && !user && !isVisitor) navigate({ to: "/auth" });
+  }, [loading, user, isVisitor, navigate]);
 
   // All completed progress entries
   const { data: progress = [], isLoading: progressLoading } = useQuery({
@@ -85,8 +87,11 @@ function GradesPage() {
     },
   });
 
-  // Course details for completed codes
-  const completedCodes = useMemo(() => progress.map((p) => p.course_code), [progress]);
+  // Course details for completed codes (visitor: from localStorage, else Supabase)
+  const completedCodes = useMemo(
+    () => (isVisitor ? Array.from(visitor.completedCodes) : progress.map((p) => p.course_code)),
+    [isVisitor, visitor.completedCodes, progress],
+  );
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery({
     queryKey: ["courses-for-grades", completedCodes.join(",")],
@@ -114,14 +119,22 @@ function GradesPage() {
   const [baselineDirty, setBaselineDirty] = useState(false);
 
   useEffect(() => {
-    if (baseline && !baselineInit) {
+    if (baselineInit) return;
+    if (isVisitor) {
+      const b = visitor.baseline;
+      setBaseMode(b.mode);
+      setBaseGpa(b.gpa);
+      setBaseCredits(b.credits);
+      setBasePoints(b.points);
+      setBaselineInit(true);
+    } else if (baseline) {
       setBaseGpa(baseline.baseline_gpa != null ? String(baseline.baseline_gpa) : "");
       setBaseCredits(baseline.baseline_credits != null ? String(baseline.baseline_credits) : "");
       setBasePoints(baseline.baseline_points != null ? String(baseline.baseline_points) : "");
       setBaseMode(baseline.baseline_points != null ? "points" : "gpa");
       setBaselineInit(true);
     }
-  }, [baseline, baselineInit]);
+  }, [isVisitor, visitor.baseline, baseline, baselineInit]);
 
   const baseCreditsNum = parseInt(baseCredits, 10);
   const hasBaseCredits = !isNaN(baseCreditsNum) && baseCreditsNum > 0;
@@ -145,11 +158,20 @@ function GradesPage() {
   };
 
   useEffect(() => {
-    if (courses.length > 0 && progress.length > 0 && !initialized) {
+    if (courses.length > 0 && completedCodes.length > 0 && !initialized) {
       const progressMap = new Map(progress.map((p) => [p.course_code, p]));
       const built: CourseRow[] = courses
         .map((c) => {
-          const p = progressMap.get(c.code);
+          let grade = "", semester = "";
+          if (isVisitor) {
+            const g = visitor.grades[c.code];
+            grade = g?.grade ?? "";
+            semester = g?.semester ?? "";
+          } else {
+            const p = progressMap.get(c.code);
+            grade = p?.grade ?? "";
+            semester = p?.semester_taken ?? "";
+          }
           return {
             course_code: c.code,
             name: c.name,
@@ -157,8 +179,8 @@ function GradesPage() {
             credits: c.credits,
             level_num: c.level_num,
             course_type: c.course_type,
-            grade: p?.grade ?? "",
-            semester: p?.semester_taken ?? "",
+            grade,
+            semester,
             dirty: false,
           };
         })
@@ -166,7 +188,7 @@ function GradesPage() {
       setRows(built);
       setInitialized(true);
     }
-  }, [courses, progress, initialized]);
+  }, [courses, completedCodes, progress, isVisitor, visitor.grades, initialized]);
 
   const updateRow = (code: string, field: "grade" | "semester", value: string) => {
     setRows((prev) =>
@@ -197,6 +219,21 @@ function GradesPage() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (isVisitor) {
+        for (const r of rows.filter((r) => r.dirty)) {
+          visitor.setGrade(r.course_code, "grade", r.grade);
+          visitor.setGrade(r.course_code, "semester", r.semester);
+        }
+        if (baselineDirty) {
+          visitor.setBaseline({
+            mode: baseMode,
+            credits: hasBaseline ? baseCredits : "",
+            gpa: !hasBaseline ? "" : (baseMode === "gpa" ? baseGpa : derivedGpa),
+            points: (!hasBaseline || baseMode === "gpa") ? "" : basePoints,
+          });
+        }
+        return;
+      }
       const dirty = rows.filter((r) => r.dirty);
       for (const r of dirty) {
         const { error } = await supabase.from("student_progress").upsert(
@@ -260,7 +297,7 @@ function GradesPage() {
     return [...map.entries()].sort(([a], [b]) => (a ?? 99) - (b ?? 99));
   }, [rows]);
 
-  const isLoading = loading || progressLoading || (completedCodes.length > 0 && coursesLoading);
+  const isLoading = (loading && !isVisitor) || progressLoading || (completedCodes.length > 0 && coursesLoading);
 
   if (isLoading) {
     return (
