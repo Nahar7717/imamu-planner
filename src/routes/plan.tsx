@@ -193,16 +193,30 @@ function PlanPage() {
                     </div>
                   </div>
                   <div>
-                    {term.courses.map((c, i) => (
-                      <div key={c.code} style={{
-                        display: "flex", alignItems: "center", gap: 12, padding: "9px 16px",
-                        borderBottom: i < term.courses.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
-                      }}>
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#f97316", minWidth: 74 }}>{courseCode(c)}</span>
-                        <span style={{ flex: 1, fontSize: 13, color: "var(--color-foreground)" }}>{courseName(c)}</span>
-                        <span style={{ fontSize: 11, color: "var(--ds-muted)", fontFamily: "var(--font-mono)" }}>{c.credits} {lang === "ar" ? "س" : "cr"}</span>
-                      </div>
-                    ))}
+                    {term.courses.map((c, i) => {
+                      const isSlot = c.course_type === "elective_slot";
+                      return (
+                        <div key={c.code} style={{
+                          display: "flex", alignItems: "center", gap: 12, padding: "9px 16px",
+                          borderBottom: i < term.courses.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                          background: isSlot ? "rgba(168,85,247,0.05)" : "transparent",
+                        }}>
+                          {isSlot ? (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: "#a855f7", minWidth: 74, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              ◇ {lang === "ar" ? "اختياري" : "Choose"}
+                            </span>
+                          ) : (
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#f97316", minWidth: 74 }}>{courseCode(c)}</span>
+                          )}
+                          <span style={{ flex: 1, fontSize: 13, color: isSlot ? "#c084fc" : "var(--color-foreground)", fontStyle: isSlot ? "italic" : "normal" }}>
+                            {isSlot
+                              ? `${lang === "ar" ? "اختر مادة من: " : "Pick a course from: "}${courseName(c)}`
+                              : courseName(c)}
+                          </span>
+                          <span style={{ fontSize: 11, color: "var(--ds-muted)", fontFamily: "var(--font-mono)" }}>{c.credits} {lang === "ar" ? "س" : "cr"}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );

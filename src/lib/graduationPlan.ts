@@ -54,18 +54,38 @@ export function buildGraduationPlan(
     if (ELECTIVE_GROUP_IDS.includes(gc.group_id)) groupOfCourse.set(gc.course_code, gc.group_id);
   }
 
-  // Remaining credit need per elective group (required − already completed).
-  const electiveNeed = new Map<string, number>();
+  // Elective requirements are shown as generic "pick one from <category>" slots,
+  // not specific courses — the student chooses which course fills each slot.
+  const electiveSlots: Course[] = [];
   for (const gid of ELECTIVE_GROUP_IDS) {
     const g = groups.find((x) => x.group_id === gid);
     if (!g) continue;
     const memberCodes = groupCourses.filter((gc) => gc.group_id === gid).map((gc) => gc.course_code);
-    const doneCredits = memberCodes
-      .map((c) => byCode.get(c))
-      .filter((c): c is Course => !!c && completedCodes.has(c.code))
+    const members = memberCodes.map((c) => byCode.get(c)).filter((c): c is Course => !!c);
+    const doneCredits = members
+      .filter((c) => completedCodes.has(c.code))
       .reduce((s, c) => s + c.credits, 0);
-    const need = Math.max(0, g.required_credits - doneCredits);
-    if (need > 0) electiveNeed.set(gid, need);
+    let need = Math.max(0, g.required_credits - doneCredits);
+    if (need <= 0) continue;
+    // Typical credits per course in this group → slot size.
+    const typical = g.required_count > 0
+      ? Math.max(1, Math.round(g.required_credits / g.required_count))
+      : (members[0]?.credits ?? 3);
+    let i = 0;
+    while (need > 0) {
+      const cr = Math.min(typical, need);
+      electiveSlots.push({
+        code: `__${gid}_SLOT_${i++}`,
+        code_ar: null,
+        name: g.name,
+        name_ar: g.name_ar,
+        credits: cr,
+        course_type: "elective_slot",
+        level_num: 99, // scheduled after mandatory courses
+        major_id: null,
+      });
+      need -= cr;
+    }
   }
 
   // Mandatory individual courses still needed (core + university-mandatory).
@@ -81,13 +101,14 @@ export function buildGraduationPlan(
   );
 
   const completed = new Set(completedCodes);
-  const scheduled = new Set<string>(); // elective courses already placed
   const terms: PlannedTerm[] = [];
   const byLevel = (a: Course, b: Course) => (a.level_num ?? 99) - (b.level_num ?? 99);
   const prereqsMet = (code: string) => prereqsOf(code).every((p) => completed.has(p));
 
+  let slotIdx = 0; // next elective slot to place
+
   let guard = 0;
-  while ((mandatoryNeeded.size > 0 || electiveNeed.size > 0) && guard < maxTerms) {
+  while ((mandatoryNeeded.size > 0 || slotIdx < electiveSlots.length) && guard < maxTerms) {
     guard++;
     const term: Course[] = [];
     let credits = 0;
@@ -110,30 +131,10 @@ export function buildGraduationPlan(
       if (tryAdd(c)) mandatoryNeeded.delete(c.code);
     }
 
-    // 2) Fill remaining room with electives from groups that still need credits.
-    if (credits < softTarget) {
-      const eligibleElectives = courses
-        .filter(
-          (c) =>
-            !completed.has(c.code) &&
-            !scheduled.has(c.code) &&
-            groupOfCourse.has(c.code) &&
-            (electiveNeed.get(groupOfCourse.get(c.code)!) ?? 0) > 0 &&
-            prereqsMet(c.code),
-        )
-        .sort(byLevel);
-
-      for (const c of eligibleElectives) {
-        if (credits >= softTarget) break;
-        const gid = groupOfCourse.get(c.code)!;
-        if ((electiveNeed.get(gid) ?? 0) <= 0) continue;
-        if (tryAdd(c)) {
-          scheduled.add(c.code);
-          const left = (electiveNeed.get(gid) ?? 0) - c.credits;
-          if (left > 0) electiveNeed.set(gid, left);
-          else electiveNeed.delete(gid);
-        }
-      }
+    // 2) Fill remaining room with generic elective slots (no prereqs).
+    while (slotIdx < electiveSlots.length && credits < softTarget) {
+      if (!tryAdd(electiveSlots[slotIdx])) break; // wouldn't fit under the cap
+      slotIdx++;
     }
 
     // Nothing could be scheduled though work remains → unresolved prereqs.
