@@ -597,6 +597,20 @@ function Dashboard() {
                       ? s.dashboard.degreeComplete
                       : `${s.dashboard.onTrack} · ${s.dashboard.semestersRemain(Math.ceil((overallTotal - overallDone) / 19))}`}
                   </div>
+                  {overallDone < overallTotal && (
+                    <a
+                      href="/plan"
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 4, marginTop: 12,
+                        padding: "6px 12px", background: "rgba(249,115,22,0.1)", color: "#f97316",
+                        border: "1px solid rgba(249,115,22,0.25)", borderRadius: 8,
+                        fontSize: 11, fontWeight: 600, fontFamily: "var(--font-sans)",
+                        textDecoration: "none", cursor: "pointer",
+                      }}
+                    >
+                      {lang === "ar" ? "خطة التخرج ←" : "Graduation plan →"}
+                    </a>
+                  )}
                 </div>
                 <ProgressRing value={overallPct} size={76} stroke={7} label={`${Math.round(overallPct * 100)}%`} sub={s.dashboard.degree_sub} />
               </div>
