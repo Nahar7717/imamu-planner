@@ -15,6 +15,7 @@ import {
   type CourseStatus,
 } from "@/lib/plannerLogic";
 import { CourseCard } from "@/components/CourseCard";
+import { GPA_POINTS } from "@/lib/gpa";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -106,12 +107,13 @@ function Dashboard() {
     queryKey: ["profile", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("profiles") as any)
+      const { data, error } = await supabase
+        .from("profiles")
         .select("major_id, is_admin, full_name, baseline_gpa, baseline_credits, baseline_points")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { major_id: string | null; is_admin: boolean; full_name: string | null; baseline_gpa: number | null; baseline_credits: number | null; baseline_points: number | null };
+      return data;
     },
   });
 
@@ -208,9 +210,7 @@ function Dashboard() {
     return m;
   }, [progress]);
 
-  // GPA calculation — Saudi 5-point scale
-  // Saudi 5.0 scale (IMAMU)
-  const GPA_POINTS: Record<string, number> = { "A+": 5.0, A: 4.75, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 1.0 };
+  // GPA calculation — Saudi 5-point scale (GPA_POINTS shared from lib/gpa)
   const { gpa, gradedCount, gradedCredits } = useMemo(() => {
     let totalPoints = 0, totalCredits = 0, count = 0;
     if (isVisitor) {

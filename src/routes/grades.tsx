@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
 import { useVisitorProgress } from "@/hooks/useVisitorProgress";
+import { GRADES, GPA_POINTS, MAX_GPA, buildSemesterOptions } from "@/lib/gpa";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/grades")({
@@ -27,12 +28,6 @@ const normalizeDecimal = (s: string) => {
 
 // Keep digits only (for credits input)
 const normalizeInteger = (s: string) => toLatinDigits(s).replace(/[^0-9]/g, "");
-
-const GRADES = ["A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"] as const;
-// Saudi 5.0 scale (IMAMU)
-const GPA_POINTS: Record<string, number> = {
-  "A+": 5.0, A: 4.75, "B+": 4.5, B: 4.0, "C+": 3.5, C: 3.0, "D+": 2.5, D: 2.0, F: 1.0,
-};
 
 type CourseRow = {
   course_code: string;
@@ -78,12 +73,13 @@ function GradesPage() {
     queryKey: ["baseline-gpa", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("profiles") as any)
+      const { data, error } = await supabase
+        .from("profiles")
         .select("baseline_gpa, baseline_credits, baseline_points")
         .eq("id", user!.id)
         .single();
       if (error) return null;
-      return data as { baseline_gpa: number | null; baseline_credits: number | null; baseline_points: number | null };
+      return data;
     },
   });
 
@@ -141,7 +137,10 @@ function GradesPage() {
   // The value the user is typing (depends on mode); the other is derived.
   const typedGpaNum = parseFloat(baseGpa);
   const typedPointsNum = parseFloat(basePoints);
-  const hasBaseline = hasBaseCredits && (baseMode === "gpa" ? !isNaN(typedGpaNum) : !isNaN(typedPointsNum));
+  // The resulting cumulative GPA must land in a valid range, whichever mode.
+  const effectiveGpa = baseMode === "gpa" ? typedGpaNum : (hasBaseCredits ? typedPointsNum / baseCreditsNum : NaN);
+  const gpaInRange = !isNaN(effectiveGpa) && effectiveGpa >= 0 && effectiveGpa <= MAX_GPA;
+  const hasBaseline = hasBaseCredits && (baseMode === "gpa" ? !isNaN(typedGpaNum) : !isNaN(typedPointsNum)) && gpaInRange;
   // Prior points used in the GPA calc — exact when in points mode.
   const priorPoints = baseMode === "points" ? typedPointsNum : typedGpaNum * baseCreditsNum;
   // Live-derived display value for the non-editable field.
@@ -249,7 +248,8 @@ function GradesPage() {
         if (error) throw error;
       }
       if (baselineDirty) {
-        const { error } = await (supabase.from("profiles") as any)
+        const { error } = await supabase
+          .from("profiles")
           .update({
             baseline_credits: hasBaseline ? baseCreditsNum : null,
             baseline_gpa: !hasBaseline ? null : (baseMode === "gpa" ? typedGpaNum : parseFloat(derivedGpa)),
@@ -272,19 +272,7 @@ function GradesPage() {
   });
 
   // Semester options
-  const semesterOptions = useMemo(() => {
-    const opts: { value: string; label: string }[] = [];
-    const currentYear = new Date().getFullYear();
-    for (let y = currentYear + 1; y >= 2018; y--) {
-      const ay = `${y}-${y + 1}`;
-      opts.push(
-        { value: `Summer-${y}`, label: lang === "ar" ? `صيف ${y}` : `Summer ${y}` },
-        { value: `Second-${ay}`, label: lang === "ar" ? `الفصل الثاني ${ay}` : `Second Semester ${ay}` },
-        { value: `First-${ay}`, label: lang === "ar" ? `الفصل الأول ${ay}` : `First Semester ${ay}` },
-      );
-    }
-    return opts;
-  }, [lang]);
+  const semesterOptions = useMemo(() => buildSemesterOptions(lang), [lang]);
 
   // Group rows by level
   const grouped = useMemo(() => {
@@ -437,9 +425,13 @@ function GradesPage() {
           </div>
           {(baseGpa !== "" || baseCredits !== "" || basePoints !== "") && !hasBaseline && (
             <div style={{ fontSize: 11, color: "#ef4444", marginTop: 10 }}>
-              {lang === "ar"
-                ? "أدخل عدد الساعات (أكبر من صفر) مع القيمة المختارة حتى يُحتسب."
-                : "Enter prior hours (above 0) plus the selected value for it to count."}
+              {hasBaseCredits && !gpaInRange
+                ? (lang === "ar"
+                    ? `القيمة تعطي معدلاً خارج النطاق (0 – ${MAX_GPA.toFixed(2)}). تأكد من النقاط أو المعدل والساعات.`
+                    : `That gives a GPA outside 0 – ${MAX_GPA.toFixed(2)}. Check your points/GPA and hours.`)
+                : (lang === "ar"
+                    ? "أدخل عدد الساعات (أكبر من صفر) مع القيمة المختارة حتى يُحتسب."
+                    : "Enter prior hours (above 0) plus the selected value for it to count.")}
             </div>
           )}
           {hasBaseline && baseMode === "points" && (

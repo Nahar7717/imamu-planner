@@ -205,6 +205,9 @@ export type Database = {
       }
       profiles: {
         Row: {
+          baseline_credits: number | null
+          baseline_gpa: number | null
+          baseline_points: number | null
           batch: number | null
           created_at: string
           email: string
@@ -215,6 +218,9 @@ export type Database = {
           student_id: string | null
         }
         Insert: {
+          baseline_credits?: number | null
+          baseline_gpa?: number | null
+          baseline_points?: number | null
           batch?: number | null
           created_at?: string
           email: string
@@ -225,6 +231,9 @@ export type Database = {
           student_id?: string | null
         }
         Update: {
+          baseline_credits?: number | null
+          baseline_gpa?: number | null
+          baseline_points?: number | null
           batch?: number | null
           created_at?: string
           email?: string
