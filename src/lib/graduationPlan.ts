@@ -22,6 +22,11 @@ export type PlanOptions = {
 
 const ELECTIVE_GROUP_IDS = ["CS_ELEC", "FREE", "UNI_G1", "UNI_G2", "UNI_G3", "UNI_G4", "UNI_G5"];
 
+// A generated elective slot has code `__<groupId>_SLOT_<n>`.
+export const isElectiveSlot = (code: string) => code.startsWith("__") && code.includes("_SLOT_");
+export const slotGroupId = (code: string): string | null =>
+  isElectiveSlot(code) ? code.slice(2).replace(/_SLOT_\d+$/, "") : null;
+
 /**
  * Build a term-by-term path to graduation.
  *

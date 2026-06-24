@@ -1,13 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useTheme } from "@/hooks/useTheme";
 import { useVisitorProgress } from "@/hooks/useVisitorProgress";
-import { buildGraduationPlan } from "@/lib/graduationPlan";
+import { buildGraduationPlan, slotGroupId } from "@/lib/graduationPlan";
 import type { Course, Prerequisite, ElectiveGroup, ElectiveGroupCourse } from "@/lib/plannerLogic";
+
+const CHOICES_KEY = "plan_elective_choices";
 
 export const Route = createFileRoute("/plan")({
   component: PlanPage,
@@ -98,6 +100,36 @@ function PlanPage() {
     }),
     [majorCourses, prerequisites, groups, groupCourses, completedCodes],
   );
+
+  // Member courses per elective group (not yet completed) — options for each slot.
+  const membersByGroup = useMemo(() => {
+    const byCode = new Map(majorCourses.map((c) => [c.code, c]));
+    const map = new Map<string, Course[]>();
+    for (const gc of groupCourses) {
+      const c = byCode.get(gc.course_code);
+      if (!c || completedCodes.has(c.code)) continue;
+      if (!map.has(gc.group_id)) map.set(gc.group_id, []);
+      map.get(gc.group_id)!.push(c);
+    }
+    for (const list of map.values()) list.sort((a, b) => (a.level_num ?? 99) - (b.level_num ?? 99) || a.code.localeCompare(b.code));
+    return map;
+  }, [majorCourses, groupCourses, completedCodes]);
+
+  // Student's chosen course per slot, persisted locally.
+  const [choices, setChoices] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem(CHOICES_KEY) || "{}"); } catch { return {}; }
+  });
+  const setChoice = (slotCode: string, courseCode: string) => {
+    setChoices((prev) => {
+      const next = { ...prev };
+      if (courseCode) next[slotCode] = courseCode; else delete next[slotCode];
+      localStorage.setItem(CHOICES_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+  // Courses already chosen in some slot — hidden from other dropdowns.
+  const chosenCodes = useMemo(() => new Set(Object.values(choices)), [choices]);
 
   const isLoading = (loading && !isVisitor) || coursesLoading;
   const courseName = (c: Course) => (lang === "ar" && c.name_ar ? c.name_ar : c.name);
@@ -195,6 +227,12 @@ function PlanPage() {
                   <div>
                     {term.courses.map((c, i) => {
                       const isSlot = c.course_type === "elective_slot";
+                      const gid = isSlot ? slotGroupId(c.code) : null;
+                      const allMembers = gid ? (membersByGroup.get(gid) ?? []) : [];
+                      // Same-credit options not already chosen in another slot.
+                      const options = allMembers.filter(
+                        (m) => m.credits === c.credits && (!chosenCodes.has(m.code) || choices[c.code] === m.code),
+                      );
                       return (
                         <div key={c.code} style={{
                           display: "flex", alignItems: "center", gap: 12, padding: "9px 16px",
@@ -202,18 +240,37 @@ function PlanPage() {
                           background: isSlot ? "rgba(168,85,247,0.05)" : "transparent",
                         }}>
                           {isSlot ? (
-                            <span style={{ fontSize: 10, fontWeight: 600, color: "#a855f7", minWidth: 74, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              ◇ {lang === "ar" ? "اختياري" : "Choose"}
-                            </span>
+                            <>
+                              <span style={{ fontSize: 13, color: "#a855f7", flexShrink: 0 }} title={courseName(c)}>◇</span>
+                              <select
+                                value={choices[c.code] ?? ""}
+                                onChange={(e) => setChoice(c.code, e.target.value)}
+                                style={{
+                                  flex: 1, minWidth: 0, padding: "6px 10px",
+                                  background: "var(--ds-canvas-deep, rgba(0,0,0,0.3))",
+                                  color: choices[c.code] ? "var(--color-foreground)" : "#c084fc",
+                                  border: `1px solid ${choices[c.code] ? "rgba(168,85,247,0.4)" : "rgba(168,85,247,0.25)"}`,
+                                  borderRadius: 8, fontSize: 12.5, fontFamily: "var(--font-sans)", outline: "none", cursor: "pointer",
+                                  textAlign: lang === "ar" ? "right" : "left",
+                                }}
+                              >
+                                <option value="">
+                                  {lang === "ar" ? `اختر مادة — ${courseName(c)}` : `Choose — ${courseName(c)}`}
+                                </option>
+                                {options.map((m) => (
+                                  <option key={m.code} value={m.code}>
+                                    {courseCode(m)} · {courseName(m)}
+                                  </option>
+                                ))}
+                              </select>
+                            </>
                           ) : (
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#f97316", minWidth: 74 }}>{courseCode(c)}</span>
+                            <>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#f97316", minWidth: 74 }}>{courseCode(c)}</span>
+                              <span style={{ flex: 1, fontSize: 13, color: "var(--color-foreground)" }}>{courseName(c)}</span>
+                            </>
                           )}
-                          <span style={{ flex: 1, fontSize: 13, color: isSlot ? "#c084fc" : "var(--color-foreground)", fontStyle: isSlot ? "italic" : "normal" }}>
-                            {isSlot
-                              ? `${lang === "ar" ? "اختر مادة من: " : "Pick a course from: "}${courseName(c)}`
-                              : courseName(c)}
-                          </span>
-                          <span style={{ fontSize: 11, color: "var(--ds-muted)", fontFamily: "var(--font-mono)" }}>{c.credits} {lang === "ar" ? "س" : "cr"}</span>
+                          <span style={{ fontSize: 11, color: "var(--ds-muted)", fontFamily: "var(--font-mono)", flexShrink: 0 }}>{c.credits} {lang === "ar" ? "س" : "cr"}</span>
                         </div>
                       );
                     })}
