@@ -301,7 +301,7 @@ function GradesPage() {
       {/* Header */}
       <header style={{
         position: "sticky", top: 0, zIndex: 10,
-        background: "rgba(15,15,15,0.9)", backdropFilter: "blur(12px)",
+        background: "var(--ds-header-bg)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--ds-line-soft, #1a1a1a)",
         padding: "0 20px", height: 52,
         display: "flex", alignItems: "center", gap: 12,
@@ -391,7 +391,7 @@ function GradesPage() {
                 readOnly={baseMode === "points"}
                 value={baseMode === "gpa" ? baseGpa : derivedGpa}
                 onChange={(e) => { if (baseMode === "gpa") { setBaseGpa(normalizeDecimal(e.target.value)); setBaselineDirty(true); } }}
-                style={{ width: "100%", padding: "9px 12px", background: baseMode === "points" ? "rgba(255,255,255,0.02)" : "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: baseMode === "points" ? "var(--ds-muted)" : "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left", cursor: baseMode === "points" ? "default" : "text" }}
+                style={{ width: "100%", padding: "9px 12px", background: baseMode === "points" ? "var(--ds-w02)" : "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: baseMode === "points" ? "var(--ds-muted)" : "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)", borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left", cursor: baseMode === "points" ? "default" : "text" }}
               />
             </label>
             {/* Prior hours — always editable */}
@@ -419,7 +419,7 @@ function GradesPage() {
                 readOnly={baseMode === "gpa"}
                 value={baseMode === "points" ? basePoints : derivedPoints}
                 onChange={(e) => { if (baseMode === "points") { setBasePoints(normalizeDecimal(e.target.value)); setBaselineDirty(true); } }}
-                style={{ width: "100%", padding: "9px 12px", background: baseMode === "gpa" ? "rgba(255,255,255,0.02)" : "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: baseMode === "gpa" ? "var(--ds-muted)" : "var(--color-foreground)", border: `1px solid ${baseMode === "points" && hasBaseline ? "rgba(34,197,94,0.4)" : "var(--ds-line-strong, #333)"}`, borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left", cursor: baseMode === "gpa" ? "default" : "text" }}
+                style={{ width: "100%", padding: "9px 12px", background: baseMode === "gpa" ? "var(--ds-w02)" : "var(--ds-canvas-deep, rgba(0,0,0,0.3))", color: baseMode === "gpa" ? "var(--ds-muted)" : "var(--color-foreground)", border: `1px solid ${baseMode === "points" && hasBaseline ? "rgba(34,197,94,0.4)" : "var(--ds-line-strong, #333)"}`, borderRadius: 8, fontSize: 14, fontFamily: "var(--font-mono)", outline: "none", boxSizing: "border-box", textAlign: lang === "ar" ? "right" : "left", cursor: baseMode === "gpa" ? "default" : "text" }}
               />
             </label>
           </div>
@@ -461,7 +461,7 @@ function GradesPage() {
         {/* GPA summary bar */}
         {(rows.length > 0 || hasBaseline) && (
           <div style={{
-            background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+            background: "var(--ds-w03)", border: "1px solid var(--ds-w08)",
             borderRadius: 12, padding: "16px 20px", marginBottom: 24,
             display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap",
           }}>
@@ -512,7 +512,7 @@ function GradesPage() {
         {grouped.map(([level, levelRows]) => (
           <div key={level ?? "other"} style={{ marginBottom: 28 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--ds-muted)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 22, height: 22, borderRadius: 6, background: "rgba(255,255,255,0.06)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontFamily: "var(--font-mono)" }}>
+              <span style={{ width: 22, height: 22, borderRadius: 6, background: "var(--ds-w06)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontFamily: "var(--font-mono)" }}>
                 {level ?? "—"}
               </span>
               {lang === "ar" ? `المستوى ${level ?? "—"}` : `Level ${level ?? "—"}`}
@@ -521,9 +521,9 @@ function GradesPage() {
               </span>
             </div>
 
-            <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ border: "1px solid var(--ds-w07)", borderRadius: 10, overflow: "hidden" }}>
               {/* Table header */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 48px 140px 180px", gap: 0, background: "rgba(255,255,255,0.04)", padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 48px 140px 180px", gap: 0, background: "var(--ds-w04)", padding: "8px 14px", borderBottom: "1px solid var(--ds-w06)" }}>
                 {[
                   lang === "ar" ? "الرمز" : "Code",
                   lang === "ar" ? "اسم المقرر" : "Course Name",
@@ -545,8 +545,8 @@ function GradesPage() {
                     gap: 0,
                     padding: "9px 14px",
                     alignItems: "center",
-                    borderBottom: i < levelRows.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
-                    background: row.dirty ? "rgba(249,115,22,0.04)" : i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.015)",
+                    borderBottom: i < levelRows.length - 1 ? "1px solid var(--ds-w05)" : "none",
+                    background: row.dirty ? "rgba(249,115,22,0.04)" : i % 2 === 0 ? "transparent" : "var(--ds-w015)",
                     transition: "background 150ms",
                   }}
                 >
@@ -562,9 +562,9 @@ function GradesPage() {
                     onChange={(e) => updateRow(row.course_code, "grade", e.target.value)}
                     style={{
                       width: "90%", padding: "5px 8px",
-                      background: row.grade ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.04)",
+                      background: row.grade ? "rgba(249,115,22,0.08)" : "var(--ds-w04)",
                       color: row.grade ? "#f97316" : "var(--ds-muted)",
-                      border: `1px solid ${row.grade ? "rgba(249,115,22,0.3)" : "rgba(255,255,255,0.1)"}`,
+                      border: `1px solid ${row.grade ? "rgba(249,115,22,0.3)" : "var(--ds-w10)"}`,
                       borderRadius: 6, fontSize: 12, fontFamily: "var(--font-mono)", fontWeight: 600,
                       outline: "none", cursor: "pointer", appearance: "none", textAlign: "center",
                     }}
@@ -579,8 +579,8 @@ function GradesPage() {
                     onChange={(e) => updateRow(row.course_code, "semester", e.target.value)}
                     style={{
                       width: "95%", padding: "5px 8px",
-                      background: "rgba(255,255,255,0.04)", color: row.semester ? "var(--color-foreground)" : "var(--ds-muted)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "var(--ds-w04)", color: row.semester ? "var(--color-foreground)" : "var(--ds-muted)",
+                      border: "1px solid var(--ds-w10)",
                       borderRadius: 6, fontSize: 11, fontFamily: "var(--font-sans)",
                       outline: "none", cursor: "pointer", appearance: "none",
                     }}
@@ -596,7 +596,7 @@ function GradesPage() {
 
         {/* Bottom save button */}
         {(rows.length > 0 || baselineDirty) && (
-          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 20px", background: "rgba(10,10,10,0.95)", borderTop: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
+          <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 20px", background: "var(--ds-bar-bg)", borderTop: "1px solid var(--ds-w07)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, backdropFilter: "blur(12px)" }}>
             <div style={{ fontSize: 12, color: "var(--ds-muted)" }}>
               {hasChanges
                 ? (lang === "ar" ? "تغييرات غير محفوظة" : "Unsaved changes")
@@ -608,7 +608,7 @@ function GradesPage() {
               style={{
                 padding: "10px 28px", border: "none",
                 cursor: !hasChanges || save.isPending ? "not-allowed" : "pointer",
-                background: !hasChanges ? "rgba(255,255,255,0.06)" : "linear-gradient(135deg, #f97316, #ec4899)",
+                background: !hasChanges ? "var(--ds-w06)" : "linear-gradient(135deg, #f97316, #ec4899)",
                 color: !hasChanges ? "var(--ds-muted)" : "#fff",
                 borderRadius: 8, fontSize: 13, fontWeight: 500, fontFamily: "var(--font-sans)",
                 boxShadow: hasChanges ? "0 0 20px rgba(249,115,22,0.3)" : "none",

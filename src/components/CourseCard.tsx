@@ -46,7 +46,7 @@ export function CourseCard({
   const bg =
     status === "completed"
       ? "rgba(249,115,22,0.07)"
-      : "rgba(255,255,255,0.03)";
+      : "var(--ds-w03)";
 
   return (
     <div
@@ -55,10 +55,10 @@ export function CourseCard({
       className={cn("relative transition-all duration-150", pulse && "cc-pulse")}
       style={{
         background: bg,
-        border: "1px solid rgba(255,255,255,0.06)",
+        border: "1px solid var(--ds-w06)",
         borderInlineStart: status === "available" ? "2px solid #f97316"
           : status === "completed" ? "2px solid #f97316"
-          : "1px solid rgba(255,255,255,0.06)",
+          : "1px solid var(--ds-w06)",
         borderRadius: 12,
         padding: "13px 16px",
         cursor: clickable ? "pointer" : "default",
@@ -67,7 +67,7 @@ export function CourseCard({
       onMouseEnter={(e) => {
         if (clickable)
           (e.currentTarget as HTMLDivElement).style.background =
-            status === "completed" ? "rgba(249,115,22,0.1)" : "rgba(255,255,255,0.05)";
+            status === "completed" ? "rgba(249,115,22,0.1)" : "var(--ds-w05)";
       }}
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLDivElement).style.background = bg;
@@ -114,7 +114,7 @@ export function CourseCard({
           )}
           <span style={{
             fontFamily: "var(--font-mono)", fontSize: 10,
-            background: "rgba(255,255,255,0.05)", color: "#71717a",
+            background: "var(--ds-w05)", color: "var(--ds-muted)",
             padding: "2px 8px", borderRadius: 4,
           }}>
             {course.credits} cr
@@ -163,7 +163,7 @@ function PrereqTooltip({ prereqs, missingSet, lang }: {
           bottom: "calc(100% + 8px)",
           insetInlineEnd: 0,
           background: "#1c1c22",
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: "1px solid var(--ds-w10)",
           borderRadius: 10,
           padding: "10px 12px",
           minWidth: 180,
@@ -177,7 +177,7 @@ function PrereqTooltip({ prereqs, missingSet, lang }: {
             bottom: -5, insetInlineEnd: 6,
             width: 8, height: 8,
             background: "#1c1c22",
-            border: "1px solid rgba(255,255,255,0.1)",
+            border: "1px solid var(--ds-w10)",
             borderTop: "none", borderInlineStart: "none",
             transform: "rotate(45deg)",
           }} />
@@ -262,7 +262,7 @@ function StatusBadge({ status, capped, strings }: {
     );
   }
   return (
-    <span style={{ ...badgeBase, background: "rgba(255,255,255,0.03)", color: "var(--ds-muted, #52525b)", border: "1px solid rgba(255,255,255,0.07)" }}>
+    <span style={{ ...badgeBase, background: "var(--ds-w03)", color: "var(--ds-muted, #52525b)", border: "1px solid var(--ds-w07)" }}>
       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />

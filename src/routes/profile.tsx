@@ -133,7 +133,7 @@ function ProfilePage() {
       {/* Header */}
       <header style={{
         position: "sticky", top: 0, zIndex: 10,
-        background: "rgba(15,15,15,0.88)",
+        background: "var(--ds-header-bg)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--ds-line-soft, #1a1a1a)",
         padding: "12px 20px",

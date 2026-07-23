@@ -433,7 +433,7 @@ function Dashboard() {
       {/* ── HEADER ── */}
       <header style={{
         position: "sticky", top: 0, zIndex: 10,
-        background: "rgba(15,15,15,0.88)",
+        background: "var(--ds-header-bg)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--ds-line-soft, #1a1a1a)",
         padding: "12px 16px 0",
@@ -517,7 +517,7 @@ function Dashboard() {
         </div>
 
         {/* Tab strip */}
-        <div className="tab-strip" style={{ display: "flex", gap: 0, overflowX: "auto", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <div className="tab-strip" style={{ display: "flex", gap: 0, overflowX: "auto", borderTop: "1px solid var(--ds-w06)" }}>
           {TABS.map((t) => (
             <button
               key={t.key}
@@ -586,13 +586,13 @@ function Dashboard() {
                   <div style={{ fontSize: 18, fontWeight: 700, color: "var(--color-foreground)", marginBottom: 3 }}>
                     {s.dashboard.degree}
                   </div>
-                  <div style={{ fontSize: 12, color: "#71717a", marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: "var(--ds-muted)", marginBottom: 14 }}>
                     {overallDone} {lang === "ar" ? "من" : "of"} {overallTotal} {s.dashboard.creditsEarned}
                   </div>
-                  <div style={{ height: 6, background: "rgba(255,255,255,0.07)", borderRadius: 99, overflow: "hidden", marginBottom: 5 }}>
+                  <div style={{ height: 6, background: "var(--ds-w07)", borderRadius: 99, overflow: "hidden", marginBottom: 5 }}>
                     <div style={{ width: `${Math.min(100, Math.round(overallPct * 100))}%`, height: "100%", background: "linear-gradient(90deg, #f97316, #ec4899)", borderRadius: 99, transition: "width 600ms cubic-bezier(0.4,0,0.2,1)" }} />
                   </div>
-                  <div style={{ fontSize: 11, color: "#52525b" }}>
+                  <div style={{ fontSize: 11, color: "var(--ds-muted-soft)" }}>
                     {overallDone >= overallTotal
                       ? s.dashboard.degreeComplete
                       : `${s.dashboard.onTrack} · ${s.dashboard.semestersRemain(Math.ceil((overallTotal - overallDone) / 19))}`}
@@ -619,8 +619,8 @@ function Dashboard() {
             {/* GPA card — shown once there are completed courses or a prior-GPA baseline (visitors included) */}
             {(completedCodes.size > 0 || gpa !== null) && (
               <div style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "var(--ds-w03)",
+                border: "1px solid var(--ds-w08)",
                 borderRadius: 12, padding: "16px 20px",
                 display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
               }}>
@@ -654,8 +654,8 @@ function Dashboard() {
                 </div>
                 <div style={{
                   width: 54, height: 54, borderRadius: "50%", flexShrink: 0,
-                  background: gpa === null ? "rgba(255,255,255,0.04)" : gpa >= 4.5 ? "rgba(34,197,94,0.1)" : gpa >= 3.0 ? "rgba(249,115,22,0.1)" : "rgba(239,68,68,0.1)",
-                  border: `2px solid ${gpa === null ? "rgba(255,255,255,0.08)" : gpa >= 4.5 ? "rgba(34,197,94,0.3)" : gpa >= 3.0 ? "rgba(249,115,22,0.3)" : "rgba(239,68,68,0.3)"}`,
+                  background: gpa === null ? "var(--ds-w04)" : gpa >= 4.5 ? "rgba(34,197,94,0.1)" : gpa >= 3.0 ? "rgba(249,115,22,0.1)" : "rgba(239,68,68,0.1)",
+                  border: `2px solid ${gpa === null ? "var(--ds-w08)" : gpa >= 4.5 ? "rgba(34,197,94,0.3)" : gpa >= 3.0 ? "rgba(249,115,22,0.3)" : "rgba(239,68,68,0.3)"}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: gpa === null ? 22 : 18, fontWeight: 700,
                   color: gpa === null ? "var(--ds-muted)" : gpa >= 4.5 ? "#22c55e" : gpa >= 3.0 ? "#f97316" : "#ef4444",
@@ -697,7 +697,7 @@ function Dashboard() {
             {suggested.length > 0 && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "#71717a" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--ds-muted)" }}>
                     {s.dashboard.whatNext} — {s.dashboard.unlocked}
                   </span>
                   <span style={{ fontSize: 10, background: "rgba(249,115,22,0.1)", color: "#fb923c", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 99, padding: "2px 10px", fontWeight: 600 }}>
@@ -727,7 +727,7 @@ function Dashboard() {
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                     <div style={{
                       width: 28, height: 28, borderRadius: 8, flexShrink: 0,
-                      background: allDone ? "linear-gradient(135deg, #f97316, #ec4899)" : "rgba(255,255,255,0.05)",
+                      background: allDone ? "linear-gradient(135deg, #f97316, #ec4899)" : "var(--ds-w05)",
                       color: allDone ? "#fff" : "var(--ds-muted, #71717a)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 12, fontWeight: 600, fontFamily: "var(--font-mono)",
@@ -823,7 +823,7 @@ function ProgressRing({ value, size, stroke, label, sub }: {
             <stop offset="100%" stopColor="#ec4899" />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} fill="none" />
+        <circle cx={size / 2} cy={size / 2} r={r} stroke="var(--ds-w06)" strokeWidth={stroke} fill="none" />
         <circle
           cx={size / 2} cy={size / 2} r={r}
           stroke={`url(#${gradId})`} strokeWidth={stroke} fill="none"
@@ -969,7 +969,7 @@ function MajorPicker({ userId, lang }: { userId: string; lang: string }) {
               onChange={(e) => { setSelectedCollege(e.target.value); setSelectedMajor(""); }}
               style={{
                 width: "100%", padding: "10px 12px",
-                background: "#000", color: selectedCollege ? "var(--color-foreground)" : "var(--ds-muted)",
+                background: "var(--ds-canvas-deep)", color: selectedCollege ? "var(--color-foreground)" : "var(--ds-muted)",
                 border: "1px solid var(--ds-line-strong, #333)",
                 borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)", outline: "none", appearance: "none",
               }}
@@ -992,7 +992,7 @@ function MajorPicker({ userId, lang }: { userId: string; lang: string }) {
               disabled={filteredMajors.length === 0}
               style={{
                 width: "100%", padding: "10px 12px",
-                background: "#000", color: selectedMajor ? "var(--color-foreground)" : "var(--ds-muted)",
+                background: "var(--ds-canvas-deep)", color: selectedMajor ? "var(--color-foreground)" : "var(--ds-muted)",
                 border: "1px solid var(--ds-line-strong, #333)",
                 borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)", outline: "none", appearance: "none",
                 opacity: filteredMajors.length === 0 ? 0.5 : 1, cursor: filteredMajors.length === 0 ? "not-allowed" : "pointer",
@@ -1010,7 +1010,7 @@ function MajorPicker({ userId, lang }: { userId: string; lang: string }) {
             disabled={!selectedMajor || saving}
             style={{
               marginTop: 4, padding: "12px 16px", border: "none",
-              background: selectedMajor ? "linear-gradient(135deg, #f97316, #ec4899)" : "rgba(255,255,255,0.06)",
+              background: selectedMajor ? "linear-gradient(135deg, #f97316, #ec4899)" : "var(--ds-w06)",
               color: selectedMajor ? "#fff" : "var(--ds-muted)",
               borderRadius: 8, fontSize: 14, fontWeight: 500, fontFamily: "var(--font-sans)",
               cursor: selectedMajor ? "pointer" : "not-allowed",

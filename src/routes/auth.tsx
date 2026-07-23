@@ -430,7 +430,7 @@ function FieldSelect({
         disabled={disabled}
         style={{
           width: "100%", padding: "10px 12px",
-          background: "#000", color: value ? "var(--color-foreground)" : "var(--ds-muted)",
+          background: "var(--ds-canvas-deep)", color: value ? "var(--color-foreground)" : "var(--ds-muted)",
           border: "1px solid var(--ds-line-strong, #333)",
           borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)",
           outline: "none", cursor: disabled ? "not-allowed" : "pointer",
@@ -466,7 +466,7 @@ function FieldInput({
         placeholder={placeholder}
         style={{
           width: "100%", padding: "10px 12px",
-          background: "#000", color: "var(--color-foreground)",
+          background: "var(--ds-canvas-deep)", color: "var(--color-foreground)",
           border: "1px solid var(--ds-line-strong, #333)",
           borderRadius: 8, fontSize: 14, fontFamily: "var(--font-sans)",
           outline: "none",

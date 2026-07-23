@@ -58,7 +58,7 @@ function AdminPage() {
     <div style={{ minHeight: "100vh", background: "var(--color-background)", color: "var(--color-foreground)" }}>
       <header style={{
         height: 52, padding: "0 28px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid var(--ds-w06)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: GRAD, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 16px rgba(249,115,22,0.4)" }}>
@@ -69,12 +69,12 @@ function AdminPage() {
           <span style={{ fontSize: 14, fontWeight: 600 }}>Admin Panel</span>
           <span style={{ fontSize: 11, color: "#f97316", background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.25)", borderRadius: 99, padding: "1px 8px" }}>admin</span>
         </div>
-        <button onClick={() => navigate({ to: "/" })} style={{ ...BTN, background: "rgba(255,255,255,0.06)", color: "var(--ds-muted)" }}>
+        <button onClick={() => navigate({ to: "/" })} style={{ ...BTN, background: "var(--ds-w06)", color: "var(--ds-muted)" }}>
           ← Back to Planner
         </button>
       </header>
 
-      <div style={{ padding: "0 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", gap: 0 }}>
+      <div style={{ padding: "0 28px", borderBottom: "1px solid var(--ds-w06)", display: "flex", gap: 0 }}>
         {tabs.map((t) => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: "12px 16px", fontSize: 12, fontWeight: 500, cursor: "pointer",
@@ -151,7 +151,7 @@ function StatsTab() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 12 }}>
         {statCards.map((s) => (
           <div key={s.label} style={{
-            background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.06)",
+            background: "var(--color-card)", border: "1px solid var(--ds-w06)",
             borderRadius: 12, padding: "18px 20px", borderTop: `2px solid ${s.color}`,
           }}>
             <div style={{ fontSize: 32, fontWeight: 700, color: s.color }}>{s.value}</div>
@@ -160,7 +160,7 @@ function StatsTab() {
         ))}
       </div>
       {topCourse && (
-        <div style={{ background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: "18px 20px" }}>
+        <div style={{ background: "var(--color-card)", border: "1px solid var(--ds-w06)", borderRadius: 12, padding: "18px 20px" }}>
           <div style={{ fontSize: 11, color: "var(--ds-muted)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Most Completed Course</div>
           <div style={{ fontSize: 20, fontWeight: 600, color: "#f97316" }}>{topCourse[0]}</div>
           <div style={{ fontSize: 13, color: "var(--ds-muted)", marginTop: 2 }}>completed by {topCourse[1]} student{topCourse[1] !== 1 ? "s" : ""}</div>
@@ -227,7 +227,7 @@ function CoursesTab() {
           <div key={c.code} style={{
             display: "grid", gridTemplateColumns: "80px 1fr 80px 80px 60px 80px", gap: 8,
             padding: "10px 12px", background: "var(--color-card)",
-            border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, alignItems: "center",
+            border: "1px solid var(--ds-w06)", borderRadius: 8, alignItems: "center",
           }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#f97316" }}>{c.code}</span>
             <span style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.name}</span>
@@ -235,7 +235,7 @@ function CoursesTab() {
             <span style={{ fontSize: 11, color: "var(--ds-muted)" }}>{c.major_id ?? "—"}</span>
             <span style={{ fontSize: 12 }}>{c.credits}</span>
             <div style={{ display: "flex", gap: 4 }}>
-              <button onClick={() => setEditing(c)} style={{ ...BTN, background: "rgba(255,255,255,0.06)", color: "var(--color-foreground)", padding: "4px 10px" }}>Edit</button>
+              <button onClick={() => setEditing(c)} style={{ ...BTN, background: "var(--ds-w06)", color: "var(--color-foreground)", padding: "4px 10px" }}>Edit</button>
               <button
                 onClick={() => { if (confirm(`Delete ${c.code}?`)) deleteCourse.mutate(c.code); }}
                 style={{ ...BTN, background: "rgba(239,68,68,0.12)", color: "#ef4444", padding: "4px 10px" }}
@@ -303,7 +303,7 @@ function CourseModal({ course, majors, onClose, onSaved }: {
         </FormField>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-        <button onClick={onClose} style={{ ...BTN, background: "rgba(255,255,255,0.06)", color: "var(--ds-muted)" }}>Cancel</button>
+        <button onClick={onClose} style={{ ...BTN, background: "var(--ds-w06)", color: "var(--ds-muted)" }}>Cancel</button>
         <button onClick={save} disabled={saving} style={{ ...BTN, background: GRAD, color: "#fff", opacity: saving ? 0.7 : 1 }}>
           {saving ? "Saving…" : isNew ? "Add Course" : "Save Changes"}
         </button>
@@ -350,7 +350,7 @@ function MajorsTab() {
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {colleges.map((c) => (
-            <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 }}>
+            <div key={c.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "var(--color-card)", border: "1px solid var(--ds-w06)", borderRadius: 8 }}>
               <div>
                 <span style={{ fontWeight: 500 }}>{c.name}</span>
                 {c.name_ar && <span style={{ marginInlineStart: 8, color: "var(--ds-muted)", fontSize: 13 }}> · {c.name_ar}</span>}
@@ -371,7 +371,7 @@ function MajorsTab() {
           {majors.map((m) => {
             const college = colleges.find((c) => c.id === m.college_id);
             return (
-              <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 }}>
+              <div key={m.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: "var(--color-card)", border: "1px solid var(--ds-w06)", borderRadius: 8 }}>
                 <div>
                   <span style={{ fontWeight: 500 }}>{m.name}</span>
                   {m.name_ar && <span style={{ color: "var(--ds-muted)", fontSize: 13 }}> · {m.name_ar}</span>}
@@ -482,7 +482,7 @@ function UsersTab() {
           <span>Email</span><span>Major</span><span>Role</span><span></span>
         </div>
         {profiles.map((p) => (
-          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, padding: "10px 12px", background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8, alignItems: "center" }}>
+          <div key={p.id} style={{ display: "grid", gridTemplateColumns: "1fr 120px 120px 80px", gap: 8, padding: "10px 12px", background: "var(--color-card)", border: "1px solid var(--ds-w06)", borderRadius: 8, alignItems: "center" }}>
             <div>
               <div style={{ fontSize: 13 }}>{p.email}</div>
               {p.full_name && <div style={{ fontSize: 11, color: "var(--ds-muted)" }}>{p.full_name}</div>}
@@ -497,13 +497,13 @@ function UsersTab() {
             </select>
             <span style={{
               fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99, textAlign: "center",
-              background: p.is_admin ? "rgba(249,115,22,0.12)" : "rgba(255,255,255,0.04)",
+              background: p.is_admin ? "rgba(249,115,22,0.12)" : "var(--ds-w04)",
               color: p.is_admin ? "#f97316" : "var(--ds-muted)",
-              border: p.is_admin ? "1px solid rgba(249,115,22,0.25)" : "1px solid rgba(255,255,255,0.07)",
+              border: p.is_admin ? "1px solid rgba(249,115,22,0.25)" : "1px solid var(--ds-w07)",
             }}>{p.is_admin ? "Admin" : "Student"}</span>
             <button
               onClick={() => toggleAdmin.mutate({ id: p.id, is_admin: !p.is_admin })}
-              style={{ ...BTN, background: "rgba(255,255,255,0.06)", color: "var(--ds-muted)", padding: "4px 8px", fontSize: 11 }}
+              style={{ ...BTN, background: "var(--ds-w06)", color: "var(--ds-muted)", padding: "4px 8px", fontSize: 11 }}
             >{p.is_admin ? "Revoke" : "Make Admin"}</button>
           </div>
         ))}
@@ -628,7 +628,7 @@ function ImportTab() {
       </div>
 
       {/* Example format */}
-      <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: 16 }}>
+      <div style={{ background: "var(--ds-w03)", border: "1px solid var(--ds-w08)", borderRadius: 10, padding: 16 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: "var(--ds-muted)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>
           Expected Format
         </div>
@@ -641,7 +641,7 @@ function ImportTab() {
         </div>
         <button
           onClick={() => setJson(EXAMPLE_JSON)}
-          style={{ ...BTN, marginTop: 10, background: "rgba(255,255,255,0.06)", color: "var(--ds-muted)" }}
+          style={{ ...BTN, marginTop: 10, background: "var(--ds-w06)", color: "var(--ds-muted)" }}
         >
           Load Example
         </button>
@@ -665,7 +665,7 @@ function ImportTab() {
       )}
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={parse} style={{ ...BTN, background: "rgba(255,255,255,0.08)", color: "var(--color-foreground)", padding: "8px 18px" }}>
+        <button onClick={parse} style={{ ...BTN, background: "var(--ds-w08)", color: "var(--color-foreground)", padding: "8px 18px" }}>
           Preview
         </button>
         {preview && (
@@ -685,10 +685,10 @@ function ImportTab() {
           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-foreground)", marginBottom: 10 }}>
             Preview — {preview.courses.length} courses for major <code style={{ color: "#f97316" }}>{preview.major_id}</code>
           </div>
-          <div style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, overflow: "hidden" }}>
+          <div style={{ border: "1px solid var(--ds-w08)", borderRadius: 10, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
               <thead>
-                <tr style={{ background: "rgba(255,255,255,0.04)", textAlign: "left" }}>
+                <tr style={{ background: "var(--ds-w04)", textAlign: "left" }}>
                   {["Code", "Name", "Type", "Cr", "Lvl", "Prereqs"].map((h) => (
                     <th key={h} style={{ padding: "8px 12px", fontWeight: 600, color: "var(--ds-muted)", fontSize: 11 }}>{h}</th>
                   ))}
@@ -696,7 +696,7 @@ function ImportTab() {
               </thead>
               <tbody>
                 {preview.courses.map((c, i) => (
-                  <tr key={c.code} style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,0.02)" }}>
+                  <tr key={c.code} style={{ borderTop: "1px solid var(--ds-w05)", background: i % 2 === 0 ? "transparent" : "var(--ds-w02)" }}>
                     <td style={{ padding: "7px 12px", fontFamily: "var(--font-mono)", color: "#f97316" }}>{c.code}</td>
                     <td style={{ padding: "7px 12px", color: "var(--color-foreground)" }}>{c.name}</td>
                     <td style={{ padding: "7px 12px", color: "var(--ds-muted)" }}>{c.course_type}</td>
@@ -738,7 +738,7 @@ function ImportTab() {
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: "8px 10px", background: "#000",
+  width: "100%", padding: "8px 10px", background: "var(--ds-canvas-deep)",
   color: "var(--color-foreground)", border: "1px solid var(--ds-line-strong, #333)",
   borderRadius: 6, fontSize: 13, fontFamily: "var(--font-sans)", outline: "none",
 };
@@ -758,8 +758,8 @@ function FormField({ label, children, style }: { label: string; children: React.
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
-      <div style={{ background: "var(--color-card)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: 24, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, background: "var(--ds-scrim)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, padding: 20 }}>
+      <div style={{ background: "var(--color-card)", border: "1px solid var(--ds-w10)", borderRadius: 14, padding: 24, width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           {title}
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--ds-muted)", cursor: "pointer", fontSize: 18, lineHeight: 1 }}>×</button>
@@ -773,7 +773,7 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
 function ModalActions({ onClose, onSave, saving, label }: { onClose: () => void; onSave: () => void; saving: boolean; label: string }) {
   return (
     <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-      <button onClick={onClose} style={{ ...BTN, background: "rgba(255,255,255,0.06)", color: "var(--ds-muted)" }}>Cancel</button>
+      <button onClick={onClose} style={{ ...BTN, background: "var(--ds-w06)", color: "var(--ds-muted)" }}>Cancel</button>
       <button onClick={onSave} disabled={saving} style={{ ...BTN, background: GRAD, color: "#fff", opacity: saving ? 0.7 : 1 }}>
         {saving ? "Saving…" : label}
       </button>

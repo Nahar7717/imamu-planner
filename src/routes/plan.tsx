@@ -153,7 +153,7 @@ function PlanPage() {
     <div style={{ minHeight: "100vh", background: "var(--color-background)", fontFamily: "var(--font-sans)" }}>
       {/* Header */}
       <header style={{
-        position: "sticky", top: 0, zIndex: 10, background: "rgba(15,15,15,0.9)", backdropFilter: "blur(12px)",
+        position: "sticky", top: 0, zIndex: 10, background: "var(--ds-header-bg)", backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--ds-line-soft, #1a1a1a)", padding: "0 20px", height: 52,
         display: "flex", alignItems: "center", gap: 12,
       }}>
@@ -207,10 +207,10 @@ function PlanPage() {
             {plan.terms.map((term) => {
               const low = term.credits < MIN_CREDITS;
               return (
-                <div key={term.index} style={{ marginBottom: 18, border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, overflow: "hidden" }}>
+                <div key={term.index} style={{ marginBottom: 18, border: "1px solid var(--ds-w08)", borderRadius: 12, overflow: "hidden" }}>
                   <div style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
-                    padding: "11px 16px", background: "rgba(255,255,255,0.03)", borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    padding: "11px 16px", background: "var(--ds-w03)", borderBottom: "1px solid var(--ds-w06)",
                   }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--color-foreground)" }}>{termLabel(term.index)}</div>
                     <div style={{
@@ -236,7 +236,7 @@ function PlanPage() {
                       return (
                         <div key={c.code} style={{
                           display: "flex", alignItems: "center", gap: 12, padding: "9px 16px",
-                          borderBottom: i < term.courses.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none",
+                          borderBottom: i < term.courses.length - 1 ? "1px solid var(--ds-w05)" : "none",
                           background: isSlot ? "rgba(168,85,247,0.05)" : "transparent",
                         }}>
                           {isSlot ? (
