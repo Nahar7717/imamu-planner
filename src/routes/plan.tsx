@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, LIGHT_MODE_ENABLED } from "@/hooks/useTheme";
 import { useVisitorProgress } from "@/hooks/useVisitorProgress";
 import { buildGraduationPlan, slotGroupId } from "@/lib/graduationPlan";
 import type { Course, Prerequisite, ElectiveGroup, ElectiveGroupCourse } from "@/lib/plannerLogic";
@@ -163,7 +163,7 @@ function PlanPage() {
         <div style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--color-foreground)" }}>
           {lang === "ar" ? "خطة التخرج" : "Graduation Plan"}
         </div>
-        <button onClick={toggleTheme} style={{ background: "transparent", border: "1px solid var(--ds-line-strong, #333)", color: "var(--ds-body)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 13 }}>
+        <button onClick={toggleTheme} hidden={!LIGHT_MODE_ENABLED} style={{ background: "transparent", border: "1px solid var(--ds-line-strong, #333)", color: "var(--ds-body)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 13 }}>
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
         <button onClick={() => setLang(lang === "en" ? "ar" : "en")} style={{ background: "transparent", border: "1px solid var(--ds-line-strong, #333)", color: "var(--ds-body)", borderRadius: 8, padding: "5px 10px", cursor: "pointer", fontSize: 11, fontFamily: "var(--font-mono)", fontWeight: 600 }}>

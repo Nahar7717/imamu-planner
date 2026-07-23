@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, LIGHT_MODE_ENABLED } from "@/hooks/useTheme";
 import { t } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -178,7 +178,7 @@ function AuthPage() {
           </div>
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={toggleTheme} hidden={!LIGHT_MODE_ENABLED}
             style={{
               padding: "2px 8px", cursor: "pointer",
               background: "transparent", color: "var(--ds-muted)",

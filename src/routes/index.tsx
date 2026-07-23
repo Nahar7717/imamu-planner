@@ -19,7 +19,7 @@ import { GPA_POINTS } from "@/lib/gpa";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, LIGHT_MODE_ENABLED } from "@/hooks/useTheme";
 import { t } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
@@ -462,7 +462,7 @@ function Dashboard() {
             </div>
           </div>
           <button
-            onClick={toggleTheme}
+            onClick={toggleTheme} hidden={!LIGHT_MODE_ENABLED}
             style={{
               padding: "6px 10px", cursor: "pointer",
               background: "transparent", color: "var(--ds-body, #a8a8a8)",

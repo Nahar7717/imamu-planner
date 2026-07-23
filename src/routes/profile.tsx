@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/useLanguage";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, LIGHT_MODE_ENABLED } from "@/hooks/useTheme";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
@@ -147,7 +147,7 @@ function ProfilePage() {
         </button>
         <div style={{ flex: 1 }} />
         <button
-          onClick={toggleTheme}
+          onClick={toggleTheme} hidden={!LIGHT_MODE_ENABLED}
           style={{ background: "transparent", border: "1px solid var(--ds-line-strong, #333)", color: "var(--ds-body)", borderRadius: 8, padding: "6px 10px", cursor: "pointer", fontSize: 13 }}
         >
           {theme === "dark" ? "☀️" : "🌙"}
